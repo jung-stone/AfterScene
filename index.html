@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AfterScene | 연극이 끝나도, 기억은 남는다</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- 상단 헤더 -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">AfterScene</a>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="연극 제목을 검색해보세요" />
+      </div>
+
+      <nav class="nav-menu">
+        <a href="#" id="myPageBtn">마이페이지</a>
+        <a href="#" id="loginBtn">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="main-content">
+    <section class="hero">
+      <h1>Stage Ends. Memories Stay.</h1>
+      <p>당신이 본 연극, 그 감동을 기록해보세요.</p>
+    </section>
+
+    <section class="play-section">
+      <h2 class="section-title">🔥 인기 연극</h2>
+      <div class="play-grid" id="popularPlays">
+        <!-- 여기에 연극 카드들이 나중에 자동으로 채워질 예정입니다 -->
+        <p class="placeholder-text">아직 연극 데이터가 없어요. Step 4에서 채워질 예정입니다!</p>
+      </div>
+    </section>
+
+    <section class="play-section">
+      <h2 class="section-title">🆕 최신 연극</h2>
+      <div class="play-grid" id="latestPlays">
+        <p class="placeholder-text">아직 연극 데이터가 없어요. Step 4에서 채워질 예정입니다!</p>
+      </div>
+    </section>
+  </main>
+
+    <!-- 로그인/회원가입 모달 -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <button class="modal-close" id="closeModal">&times;</button>
+      <h2 id="modalTitle">로그인</h2>
+      
+      <input type="text" id="authNickname" placeholder="닉네임 (2~12자)" class="hidden" maxlength="12" />
+      <input type="email" id="authEmail" placeholder="이메일" />
+      <input type="password" id="authPassword" placeholder="비밀번호 (6자 이상)" />
+
+      <button class="modal-submit-btn" id="authSubmitBtn">로그인</button>
+
+      <p class="modal-switch-text">
+        계정이 없으신가요? <a href="#" id="switchToSignup">회원가입</a>
+      </p>
+
+      <p class="modal-error" id="authError"></p>
+    </div>
+  </div>
+  
+  <!-- 후기 작성 모달 -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeReviewModal">&times;</button>
+      <h2 id="reviewPlayTitle">연극 제목</h2>
+
+      <div class="rating-picker">
+        <input type="range" id="ratingInput" min="0.5" max="5" step="0.5" value="3.5" />
+        <div class="rating-display">⭐ <span id="ratingValue">3.5</span> / 5.0</div>
+      </div>
+
+      <input type="text" id="oneLineInput" placeholder="한 줄 평을 남겨주세요" maxlength="60" />
+      <textarea id="detailInput" placeholder="상세 후기를 자유롭게 작성해주세요" rows="5"></textarea>
+
+      <button class="modal-submit-btn" id="reviewSubmitBtn">후기 등록하기</button>
+            <h3 class="mypage-section-title">📝 다른 관람객들의 후기</h3>
+      <div class="existing-reviews" id="existingReviewsList">
+        <p class="placeholder-text">불러오는 중...</p>
+      </div>
+
+      <p class="modal-error" id="reviewError"></p>
+    </div>
+  </div>
+
+  <!-- 마이페이지 모달 -->
+  <div class="modal-overlay" id="myPageModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeMyPageModal">&times;</button>
+      <h2>마이페이지</h2>
+      <p class="mypage-email" id="myPageEmail"></p>
+
+      <div class="mypage-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="myReviewCount">0</div>
+          <div class="stat-label">작성한 후기</div>
+        </div>
+      </div>
+
+      <h3 class="mypage-section-title">내가 남긴 후기</h3>
+      <div class="my-review-list" id="myReviewList">
+        <p class="placeholder-text">불러오는 중...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>&copy; 2026 AfterScene. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

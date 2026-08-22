@@ -1,0 +1,451 @@
+/* ===== 기본 초기화 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+  background-color: #14161a;   /* 차분한 다크 배경 */
+  color: #f5f5f5;
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== 헤더 ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #1c1f26;
+  border-bottom: 1px solid #2a2e37;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ff5a5f;   /* 포인트 컬러: 연극 커튼 같은 레드톤 */
+  letter-spacing: -0.5px;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 420px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid #2a2e37;
+  background-color: #22252d;
+  color: #f5f5f5;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+  border-color: #ff5a5f;
+}
+
+.search-box input::placeholder {
+  color: #8a8f98;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.nav-menu a:hover {
+  color: #ff5a5f;
+}
+
+/* ===== 히어로 영역 ===== */
+.hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 24px 40px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.hero p {
+  font-size: 15px;
+  color: #9ca3af;
+}
+
+/* ===== 연극 섹션 ===== */
+.play-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 24px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.play-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px;
+}
+
+.placeholder-text {
+  color: #6b7280;
+  font-size: 14px;
+  grid-column: 1 / -1;
+  padding: 20px 0;
+}
+
+/* ===== 연극 카드 (Step 4에서 사용 예정) ===== */
+.play-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.play-card:hover {
+  transform: translateY(-4px);
+}
+
+.play-card img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #22252d;
+}
+
+.play-card .play-title {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play-card .play-rating {
+  font-size: 13px;
+  color: #ff5a5f;
+  margin-top: 2px;
+}
+
+/* ===== 푸터 ===== */
+.footer {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+  font-size: 13px;
+  border-top: 1px solid #2a2e37;
+  margin-top: 40px;
+}
+
+/* ===== 반응형 (모바일) ===== */
+@media (max-width: 600px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    max-width: 100%;
+    order: 3;
+  }
+
+  .hero h1 {
+    font-size: 24px;
+  }
+}
+
+/* ===== 로그인/회원가입 모달 ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: #1c1f26;
+  border-radius: 12px;
+  padding: 32px;
+  width: 90%;
+  max-width: 360px;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.modal-box h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2e37;
+  background: #22252d;
+  color: #f5f5f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-box input:focus {
+  border-color: #ff5a5f;
+}
+
+.modal-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: #ff5a5f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.modal-submit-btn:hover {
+  background: #e04d52;
+}
+
+.modal-switch-text {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.modal-switch-text a {
+  color: #ff5a5f;
+  font-weight: 600;
+}
+
+.modal-error {
+  color: #ff5a5f;
+  font-size: 13px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* 로그인 상태일 때 헤더 표시용 */
+.user-email-tag {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== 후기 작성 모달 ===== */
+.rating-picker {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.rating-picker input[type="range"] {
+  width: 100%;
+  accent-color: #ff5a5f;
+  margin-bottom: 8px;
+}
+
+.rating-display {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff5a5f;
+}
+
+.modal-box textarea {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2e37;
+  background: #22252d;
+  color: #f5f5f5;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modal-box textarea:focus {
+  border-color: #ff5a5f;
+}
+
+.play-card {
+  cursor: pointer;
+}
+
+/* ===== 마이페이지 ===== */
+.mypage-box {
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.mypage-email {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.mypage-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ff5a5f;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.mypage-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2e37;
+}
+
+.my-review-card {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.my-review-card .review-play-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.my-review-card .review-rating {
+  color: #ff5a5f;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.my-review-card .review-one-line {
+  font-size: 13px;
+  color: #d1d5db;
+  margin-bottom: 4px;
+}
+
+.my-review-card .review-date {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* ===== 기존 후기 목록 (리뷰 작성 모달 내) ===== */
+.existing-reviews {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.existing-review-card {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.existing-review-card .review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.existing-review-card .review-rating {
+  color: #ff5a5f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.existing-review-card .review-date {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.existing-review-card .review-one-line {
+  font-size: 13px;
+  color: #f5f5f5;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.existing-review-card .review-detail {
+  font-size: 12.5px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.hidden {
+  display: none !important;
+}
