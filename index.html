@@ -18,6 +18,7 @@
       </div>
 
       <nav class="nav-menu">
+        <a href="#" id="adminAddBtn" class="hidden">+ 연극 등록</a>
         <a href="#" id="myPageBtn">마이페이지</a>
         <a href="#" id="loginBtn">로그인</a>
       </nav>
@@ -26,10 +27,18 @@
 
   <!-- 메인 콘텐츠 -->
   <main class="main-content">
-    <section class="hero">
+    <section class="hero">      
       <h1>Stage Ends. Memories Stay.</h1>
       <p>당신이 본 연극, 그 감동을 기록해보세요.</p>
     </section>
+
+    <div class="genre-filter" id="genreFilter">
+      <button class="genre-btn active" data-genre="전체">전체</button>
+      <button class="genre-btn" data-genre="연극">연극</button>
+      <button class="genre-btn" data-genre="뮤지컬">뮤지컬</button>
+      <button class="genre-btn" data-genre="코미디">코미디</button>
+      <button class="genre-btn" data-genre="기타">기타</button>
+    </div>
 
     <section class="play-section">
       <h2 class="section-title">🔥 인기 연극</h2>
@@ -72,6 +81,8 @@
     <div class="modal-box mypage-box">
       <button class="modal-close" id="closeReviewModal">&times;</button>
       <h2 id="reviewPlayTitle">연극 제목</h2>
+      <button class="admin-edit-play-btn hidden" id="adminEditPlayBtn">✏️ 연극 정보 수정</button>
+      <div class="play-info-box" id="playInfoBox"></div>
 
       <div class="rating-picker">
         <input type="range" id="ratingInput" min="0.5" max="5" step="0.5" value="3.5" />
@@ -109,6 +120,56 @@
       <div class="my-review-list" id="myReviewList">
         <p class="placeholder-text">불러오는 중...</p>
       </div>
+    </div>
+  </div>
+
+    <!-- 관리자: 연극 등록 모달 -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-box">
+      <button class="modal-close" id="closeAdminModal">&times;</button>
+      <h2>새 연극 등록</h2>
+
+      <input type="text" id="adminTitle" placeholder="연극 제목" />
+      <input type="text" id="adminPoster" placeholder="포스터 이미지 URL" />
+      <input type="text" id="adminVenue" placeholder="공연 장소" />
+      <label class="admin-label">장르</label>
+      <select id="adminGenre">
+        <option value="연극">연극</option>
+        <option value="뮤지컬">뮤지컬</option>
+        <option value="코미디">코미디</option>
+        <option value="기타">기타</option>
+      </select>
+
+      <label class="admin-label">연출 (쉼표로 구분)</label>
+      <input type="text" id="adminDirector" placeholder="예: 박연출" />
+      <label class="admin-label">원작자 (쉼표로 구분)</label>
+      <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
+      <label class="admin-label">출연진 (쉼표로 구분)</label>
+      <input type="text" id="adminCast" placeholder="예: 홍길동, 김철수" />
+      <label class="admin-label">제작진 (쉼표로 구분)</label>
+      <input type="text" id="adminStaff" placeholder="예: 무대감독 이몽룡" />
+      <label class="admin-label">기획, 제작 (쉼표로 구분)</label>
+      <input type="text" id="adminProducer" placeholder="예: OO컴퍼니" />
+      <textarea id="adminDescription" placeholder="연극 소개" rows="3"></textarea>
+      <label class="admin-label">공연 시작일</label>
+      <input type="date" id="adminStartDate" />
+      <label class="admin-label">공연 종료일</label>
+      <input type="date" id="adminEndDate" />
+
+      <button class="modal-submit-btn" id="adminSubmitBtn">등록하기</button>
+      <p class="modal-error" id="adminError"></p>
+    </div>
+  </div>
+
+  <!-- 인물 상세 모달 -->
+  <div class="modal-overlay" id="personModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closePersonModal">&times;</button>
+      <h2 id="personName">이름</h2>
+      <p class="mypage-email" id="personBio"></p>
+
+      <h3 class="mypage-section-title">참여 작품</h3>
+      <div class="person-play-list" id="personPlayList"></div>
     </div>
   </div>
 

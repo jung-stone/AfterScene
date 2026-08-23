@@ -4,7 +4,13 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let allPlays = [];
+let currentPlayId = null;
+let editingReviewId = null;
+let editingPlayId = null;
+let isSignupMode = false;
+let currentGenre = '전체';
 
+// ===== 연극 목록 =====
 async function loadPlays() {
   const { data, error } = await supabaseClient
     .from('plays')
@@ -17,8 +23,7 @@ async function loadPlays() {
   }
 
   allPlays = data;
-  renderPlays(data, 'popularPlays');
-  renderPlays(data, 'latestPlays');
+  applyGenreFilter();
 }
 
 function renderPlays(plays, containerId) {
@@ -32,12 +37,12 @@ function renderPlays(plays, containerId) {
   container.innerHTML = plays.map(play => `
     <div class="play-card" data-play-id="${play.id}" data-play-title="${play.title}">
       <img src="${play.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${play.title}" />
+      <div class="genre-badge">${play.genre || '기타'}</div>
       <div class="play-title">${play.title}</div>
       <div class="play-rating">⭐ ${play.avg_rating ? play.avg_rating.toFixed(1) : '0.0'} (${play.review_count || 0}명)</div>
     </div>
   `).join('');
 
-  // 카드마다 클릭 이벤트 연결 (후기 작성 모달 열기)
   container.querySelectorAll('.play-card').forEach(card => {
     card.addEventListener('click', () => {
       openReviewModal(card.dataset.playId, card.dataset.playTitle);
@@ -45,6 +50,7 @@ function renderPlays(plays, containerId) {
   });
 }
 
+// ===== 검색 =====
 function setupSearch() {
   const searchInput = document.getElementById('searchInput');
 
@@ -52,8 +58,7 @@ function setupSearch() {
     const keyword = e.target.value.trim().toLowerCase();
 
     if (keyword === '') {
-      renderPlays(allPlays, 'popularPlays');
-      renderPlays(allPlays, 'latestPlays');
+      applyGenreFilter();
       document.querySelector('.hero').style.display = 'block';
       document.querySelector('#latestPlays').closest('.play-section').style.display = 'block';
       document.querySelector('#popularPlays').closest('.play-section').querySelector('.section-title').textContent = '🔥 인기 연극';
@@ -72,9 +77,30 @@ function setupSearch() {
   });
 }
 
-// ===== 6. 로그인/회원가입 로직 =====
-let isSignupMode = false;
+// ===== 장르 필터 =====
+function setupGenreFilter() {
+  const buttons = document.querySelectorAll('.genre-btn');
 
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentGenre = btn.dataset.genre;
+      applyGenreFilter();
+    });
+  });
+}
+
+function applyGenreFilter() {
+  const filtered = currentGenre === '전체'
+    ? allPlays
+    : allPlays.filter(play => play.genre === currentGenre);
+
+  renderPlays(filtered, 'popularPlays');
+  renderPlays(filtered, 'latestPlays');
+}
+
+// ===== 로그인 / 회원가입 =====
 function setupAuthModal() {
   const modal = document.getElementById('authModal');
   const loginBtn = document.getElementById('loginBtn');
@@ -139,7 +165,6 @@ function setupAuthModal() {
         return;
       }
 
-      // 회원가입 성공 → 프로필(닉네임) 저장
       if (data.user) {
         const { error: profileError } = await supabaseClient.from('profiles').insert({
           id: data.user.id,
@@ -165,10 +190,10 @@ function setupAuthModal() {
   });
 }
 
-// 현재 로그인 상태에 따라 헤더 UI 바꾸기
 async function updateAuthUI() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   const loginBtn = document.getElementById('loginBtn');
+  const adminBtn = document.getElementById('adminAddBtn');
 
   if (user) {
     loginBtn.textContent = '로그아웃';
@@ -178,18 +203,25 @@ async function updateAuthUI() {
       updateAuthUI();
       alert('로그아웃 되었습니다.');
     };
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+
+    adminBtn.classList.toggle('hidden', !(profile && profile.is_admin));
   } else {
     loginBtn.textContent = '로그인';
     loginBtn.onclick = (e) => {
       e.preventDefault();
       document.getElementById('authModal').classList.add('active');
     };
+    adminBtn.classList.add('hidden');
   }
 }
 
-// ===== 7. 후기 작성 로직 =====
-let currentPlayId = null;
-
+// ===== 후기 작성 (등록/수정 겸용) =====
 function setupReviewModal() {
   const modal = document.getElementById('reviewModal');
   const closeBtn = document.getElementById('closeReviewModal');
@@ -198,7 +230,6 @@ function setupReviewModal() {
   const submitBtn = document.getElementById('reviewSubmitBtn');
   const errorText = document.getElementById('reviewError');
 
-  // 슬라이더 움직일 때 숫자 실시간 반영
   ratingInput.addEventListener('input', () => {
     ratingValue.textContent = ratingInput.value;
   });
@@ -208,10 +239,45 @@ function setupReviewModal() {
     errorText.textContent = '';
   });
 
+  document.getElementById('adminEditPlayBtn').addEventListener('click', async () => {
+    const play = allPlays.find(p => p.id === currentPlayId);
+    if (!play) return;
+
+    editingPlayId = play.id;
+    document.getElementById('adminTitle').value = play.title || '';
+    document.getElementById('adminPoster').value = play.poster_url || '';
+    document.getElementById('adminVenue').value = play.venue || '';
+    document.getElementById('adminGenre').value = play.genre || '기타';
+    document.getElementById('adminDescription').value = play.description || '';
+    document.getElementById('adminStartDate').value = play.start_date || '';
+    document.getElementById('adminEndDate').value = play.end_date || '';
+    document.getElementById('adminSubmitBtn').textContent = '수정 완료';
+
+    const { data: credits } = await supabaseClient
+      .from('play_credits')
+      .select('role, people(name)')
+      .eq('play_id', play.id);
+
+    const grouped = {};
+    (credits || []).forEach(c => {
+      if (!c.people) return;
+      if (!grouped[c.role]) grouped[c.role] = [];
+      grouped[c.role].push(c.people.name);
+    });
+
+    document.getElementById('adminDirector').value = (grouped['연출'] || []).join(', ');
+    document.getElementById('adminWriter').value = (grouped['원작자'] || []).join(', ');
+    document.getElementById('adminCast').value = (grouped['출연진'] || []).join(', ');
+    document.getElementById('adminStaff').value = (grouped['제작진'] || []).join(', ');
+    document.getElementById('adminProducer').value = (grouped['기획제작'] || []).join(', ');
+
+    document.getElementById('reviewModal').classList.remove('active');
+    document.getElementById('adminModal').classList.add('active');
+  });
+
   submitBtn.addEventListener('click', async () => {
     errorText.textContent = '';
 
-    // 1. 로그인 확인
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
       errorText.textContent = '로그인 후 이용해주세요.';
@@ -227,44 +293,183 @@ function setupReviewModal() {
       return;
     }
 
-    // 2. 후기 저장
-    const { error: insertError } = await supabaseClient.from('reviews').insert({
-      play_id: currentPlayId,
-      user_id: user.id,
-      rating: rating,
-      one_line_review: oneLine,
-      detail_review: detail
-    });
+    if (editingReviewId) {
+      const { error: updateError } = await supabaseClient
+        .from('reviews')
+        .update({ rating, one_line_review: oneLine, detail_review: detail })
+        .eq('id', editingReviewId);
 
-    if (insertError) {
-      errorText.textContent = '후기 등록 중 오류가 발생했어요: ' + insertError.message;
-      return;
+      if (updateError) {
+        errorText.textContent = '수정 중 오류가 발생했어요: ' + updateError.message;
+        return;
+      }
+
+      alert('후기가 수정되었어요!');
+      editingReviewId = null;
+    } else {
+      const { error: insertError } = await supabaseClient.from('reviews').insert({
+        play_id: currentPlayId,
+        user_id: user.id,
+        rating: rating,
+        one_line_review: oneLine,
+        detail_review: detail
+      });
+
+      if (insertError) {
+        errorText.textContent = '후기 등록 중 오류가 발생했어요: ' + insertError.message;
+        return;
+      }
+
+      alert('후기가 등록되었어요! 감사합니다 🎭');
     }
 
-    alert('후기가 등록되었어요! 감사합니다 🎭');
-    loadplayreviews(currentPlayId);
+    loadPlayReviews(currentPlayId);
     modal.classList.remove('active');
     document.getElementById('oneLineInput').value = '';
     document.getElementById('detailInput').value = '';
+    document.getElementById('reviewSubmitBtn').textContent = '후기 등록하기';
 
-    loadPlays(); // 목록 새로고침 (별점/후기수 반영)
+    loadPlays();
   });
 }
 
-function openReviewModal(playId, playTitle) {
+async function openReviewModal(playId, playTitle, editData = null) {
   currentPlayId = playId;
+  editingReviewId = editData ? editData.reviewId : null;
+
   document.getElementById('reviewPlayTitle').textContent = playTitle;
-  document.getElementById('ratingInput').value = 3.5;
-  document.getElementById('ratingValue').textContent = 3.5;
-  document.getElementById('oneLineInput').value = '';
-  document.getElementById('detailInput').value = '';
+  document.getElementById('ratingInput').value = editData ? editData.rating : 3.5;
+  document.getElementById('ratingValue').textContent = editData ? editData.rating : 3.5;
+  document.getElementById('oneLineInput').value = editData ? editData.oneLine : '';
+  document.getElementById('detailInput').value = editData ? editData.detail : '';
   document.getElementById('reviewError').textContent = '';
+  document.getElementById('reviewSubmitBtn').textContent = editData ? '수정 완료' : '후기 등록하기';
   document.getElementById('reviewModal').classList.add('active');
 
+  loadPlayInfo(playId);
   loadPlayReviews(playId);
+
+  const editPlayBtn = document.getElementById('adminEditPlayBtn');
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+
+    editPlayBtn.classList.toggle('hidden', !(profile && profile.is_admin));
+  } else {
+    editPlayBtn.classList.add('hidden');
+  }
 }
 
-// 특정 연극의 기존 후기 목록 불러오기
+// ===== 공연 정보(크레딧) 표시 =====
+async function loadPlayInfo(playId) {
+  const box = document.getElementById('playInfoBox');
+  box.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const play = allPlays.find(p => p.id === playId);
+
+  const { data: credits } = await supabaseClient
+    .from('play_credits')
+    .select('role, people(id, name)')
+    .eq('play_id', playId);
+
+  const roleOrder = ['연출', '원작자', '출연진', '제작진', '기획제작'];
+  const grouped = {};
+  (credits || []).forEach(c => {
+    if (!c.people) return;
+    if (!grouped[c.role]) grouped[c.role] = [];
+    grouped[c.role].push(c.people);
+  });
+
+  let html = '';
+
+  if (play) {
+    const period = (play.start_date && play.end_date)
+      ? `${play.start_date} ~ ${play.end_date}`
+      : '';
+    html += `<div class="play-info-row">📍 ${play.venue || '장소 미정'}</div>`;
+    if (period) html += `<div class="play-info-row">🗓 ${period}</div>`;
+    if (play.description) html += `<div class="play-info-desc">${play.description}</div>`;
+  }
+
+  roleOrder.forEach(role => {
+    if (grouped[role] && grouped[role].length > 0) {
+      html += `<div class="credit-role-group">
+        <span class="credit-role-label">${role}</span>
+        ${grouped[role].map(p => `<button class="credit-tag" data-person-id="${p.id}">${p.name}</button>`).join('')}
+      </div>`;
+    }
+  });
+
+  box.innerHTML = html || `<p class="placeholder-text">등록된 정보가 없어요.</p>`;
+
+  box.querySelectorAll('.credit-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openPersonModal(btn.dataset.personId);
+    });
+  });
+}
+
+// ===== 인물 상세 모달 =====
+async function openPersonModal(personId) {
+  document.getElementById('reviewModal').classList.remove('active');
+  document.getElementById('personModal').classList.add('active');
+  document.getElementById('personName').textContent = '불러오는 중...';
+  document.getElementById('personBio').textContent = '';
+  document.getElementById('personPlayList').innerHTML = '';
+
+  const { data: person } = await supabaseClient
+    .from('people')
+    .select('*')
+    .eq('id', personId)
+    .single();
+
+  if (!person) return;
+
+  document.getElementById('personName').textContent = person.name;
+  document.getElementById('personBio').textContent = person.bio || '';
+
+  const { data: credits } = await supabaseClient
+    .from('play_credits')
+    .select('role, plays(id, title, poster_url)')
+    .eq('person_id', personId);
+
+  const listEl = document.getElementById('personPlayList');
+
+  if (!credits || credits.length === 0) {
+    listEl.innerHTML = `<p class="placeholder-text">참여한 작품 정보가 없어요.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = credits.filter(c => c.plays).map(c => `
+    <div class="person-play-card" data-play-id="${c.plays.id}" data-play-title="${c.plays.title}">
+      <img src="${c.plays.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${c.plays.title}" />
+      <div>
+        <div class="person-play-title">${c.plays.title}</div>
+        <div class="person-play-role">${c.role}</div>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.person-play-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.getElementById('personModal').classList.remove('active');
+      openReviewModal(card.dataset.playId, card.dataset.playTitle);
+    });
+  });
+}
+
+function setupPersonModal() {
+  document.getElementById('closePersonModal').addEventListener('click', () => {
+    document.getElementById('personModal').classList.remove('active');
+  });
+}
+
+// ===== 후기 목록 (좋아요 + 관리자 삭제 포함) =====
 async function loadPlayReviews(playId) {
   const listContainer = document.getElementById('existingReviewsList');
   listContainer.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
@@ -285,19 +490,47 @@ async function loadPlayReviews(playId) {
     return;
   }
 
-  // 후기 작성자들의 닉네임 가져오기
   const userIds = [...new Set(reviews.map(r => r.user_id))];
   const { data: profiles } = await supabaseClient
     .from('profiles')
     .select('id, nickname')
     .in('id', userIds);
-
   const nicknameMap = {};
   (profiles || []).forEach(p => { nicknameMap[p.id] = p.nickname; });
+
+  const reviewIds = reviews.map(r => r.id);
+  const { data: likes } = await supabaseClient
+    .from('review_likes')
+    .select('review_id, user_id')
+    .in('review_id', reviewIds);
+
+  const likeCountMap = {};
+  const myLikedSet = new Set();
+  const { data: { user: currentUser } } = await supabaseClient.auth.getUser();
+
+  (likes || []).forEach(like => {
+    likeCountMap[like.review_id] = (likeCountMap[like.review_id] || 0) + 1;
+    if (currentUser && like.user_id === currentUser.id) {
+      myLikedSet.add(like.review_id);
+    }
+  });
+
+  let isCurrentUserAdmin = false;
+  if (currentUser) {
+    const { data: myProfile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', currentUser.id)
+      .single();
+    isCurrentUserAdmin = !!(myProfile && myProfile.is_admin);
+  }
 
   listContainer.innerHTML = reviews.map(review => {
     const date = new Date(review.created_at).toLocaleDateString('ko-KR');
     const nickname = nicknameMap[review.user_id] || '익명';
+    const likeCount = likeCountMap[review.id] || 0;
+    const isLiked = myLikedSet.has(review.id);
+
     return `
       <div class="existing-review-card">
         <div class="review-top">
@@ -306,12 +539,75 @@ async function loadPlayReviews(playId) {
         </div>
         <div class="review-one-line">${review.one_line_review}</div>
         ${review.detail_review ? `<div class="review-detail">${review.detail_review}</div>` : ''}
+        <button class="like-btn ${isLiked ? 'liked' : ''}" data-review-id="${review.id}">
+          👍 <span class="like-count">${likeCount}</span>
+        </button>
+        ${isCurrentUserAdmin ? `<button class="admin-delete-btn" data-review-id="${review.id}">관리자 삭제</button>` : ''}
       </div>
     `;
   }).join('');
+
+  listContainer.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleLike(btn));
+  });
+
+  listContainer.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('관리자 권한으로 이 후기를 삭제하시겠어요?')) return;
+
+      const { error } = await supabaseClient
+        .from('reviews')
+        .delete()
+        .eq('id', btn.dataset.reviewId);
+
+      if (error) {
+        alert('삭제 중 오류가 발생했어요: ' + error.message);
+        return;
+      }
+
+      alert('후기가 삭제되었어요.');
+      loadPlayReviews(playId);
+      loadPlays();
+    });
+  });
 }
 
-// ===== 8. 마이페이지 로직 =====
+async function toggleLike(btn) {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) {
+    alert('로그인 후 이용해주세요.');
+    return;
+  }
+
+  const reviewId = btn.dataset.reviewId;
+  const isLiked = btn.classList.contains('liked');
+  const countEl = btn.querySelector('.like-count');
+
+  if (isLiked) {
+    await supabaseClient
+      .from('review_likes')
+      .delete()
+      .eq('review_id', reviewId)
+      .eq('user_id', user.id);
+
+    btn.classList.remove('liked');
+    countEl.textContent = parseInt(countEl.textContent) - 1;
+  } else {
+    const { error } = await supabaseClient
+      .from('review_likes')
+      .insert({ review_id: reviewId, user_id: user.id });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    btn.classList.add('liked');
+    countEl.textContent = parseInt(countEl.textContent) + 1;
+  }
+}
+
+// ===== 마이페이지 =====
 function setupMyPage() {
   const myPageBtn = document.getElementById('myPageBtn');
   const modal = document.getElementById('myPageModal');
@@ -341,7 +637,6 @@ async function loadMyReviews(userId) {
   const listContainer = document.getElementById('myReviewList');
   const countEl = document.getElementById('myReviewCount');
 
-  // 내 후기 + 연극 제목을 함께 가져오기 (plays 테이블과 join)
   const { data: reviews, error } = await supabaseClient
     .from('reviews')
     .select('*, plays(title, poster_url)')
@@ -364,21 +659,204 @@ async function loadMyReviews(userId) {
     const playTitle = review.plays ? review.plays.title : '삭제된 연극';
     const date = new Date(review.created_at).toLocaleDateString('ko-KR');
     return `
-      <div class="my-review-card">
+      <div class="my-review-card" data-review-id="${review.id}">
         <div class="review-play-title">${playTitle}</div>
         <div class="review-rating">⭐ ${review.rating.toFixed(1)}</div>
         <div class="review-one-line">"${review.one_line_review}"</div>
         <div class="review-date">${date}</div>
+        <div class="my-review-actions">
+          <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
+          <button class="delete-btn" data-review-id="${review.id}">삭제</button>
+        </div>
       </div>
     `;
   }).join('');
+
+  listContainer.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openReviewModal(btn.dataset.playId, btn.dataset.playTitle, {
+        reviewId: btn.dataset.reviewId,
+        rating: btn.dataset.rating,
+        oneLine: btn.dataset.oneLine,
+        detail: btn.dataset.detail
+      });
+      document.getElementById('myPageModal').classList.remove('active');
+    });
+  });
+
+  listContainer.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('정말 이 후기를 삭제하시겠어요?')) return;
+
+      const { error } = await supabaseClient
+        .from('reviews')
+        .delete()
+        .eq('id', btn.dataset.reviewId);
+
+      if (error) {
+        alert('삭제 중 오류가 발생했어요: ' + error.message);
+        return;
+      }
+
+      alert('후기가 삭제되었어요.');
+      loadMyReviews(userId);
+      loadPlays();
+    });
+  });
+}
+
+// ===== 관리자: 연극 등록/수정 + 크레딧 저장 =====
+async function findOrCreatePersonId(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  const { data: existing } = await supabaseClient
+    .from('people')
+    .select('id')
+    .eq('name', trimmed)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created, error } = await supabaseClient
+    .from('people')
+    .insert({ name: trimmed })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('인물 생성 오류:', error);
+    return null;
+  }
+  return created.id;
+}
+
+async function saveCredits(playId) {
+  const roleFields = {
+    '연출': 'adminDirector',
+    '원작자': 'adminWriter',
+    '출연진': 'adminCast',
+    '제작진': 'adminStaff',
+    '기획제작': 'adminProducer'
+  };
+
+  await supabaseClient.from('play_credits').delete().eq('play_id', playId);
+
+  for (const role in roleFields) {
+    const raw = document.getElementById(roleFields[role]).value.trim();
+    if (!raw) continue;
+    const names = raw.split(',').map(n => n.trim()).filter(n => n);
+
+    for (const name of names) {
+      const personId = await findOrCreatePersonId(name);
+      if (!personId) continue;
+      await supabaseClient.from('play_credits').insert({
+        play_id: playId,
+        person_id: personId,
+        role: role
+      });
+    }
+  }
+}
+
+function setupAdminModal() {
+  const modal = document.getElementById('adminModal');
+  const openBtn = document.getElementById('adminAddBtn');
+  const closeBtn = document.getElementById('closeAdminModal');
+  const submitBtn = document.getElementById('adminSubmitBtn');
+  const errorText = document.getElementById('adminError');
+
+  openBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    editingPlayId = null;
+    submitBtn.textContent = '등록하기';
+    document.getElementById('adminTitle').value = '';
+    document.getElementById('adminPoster').value = '';
+    document.getElementById('adminVenue').value = '';
+    document.getElementById('adminGenre').value = '연극';
+    document.getElementById('adminDescription').value = '';
+    document.getElementById('adminStartDate').value = '';
+    document.getElementById('adminEndDate').value = '';
+    document.getElementById('adminDirector').value = '';
+    document.getElementById('adminWriter').value = '';
+    document.getElementById('adminCast').value = '';
+    document.getElementById('adminStaff').value = '';
+    document.getElementById('adminProducer').value = '';
+    modal.classList.add('active');
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.classList.remove('active');
+    errorText.textContent = '';
+  });
+
+  submitBtn.addEventListener('click', async () => {
+    errorText.textContent = '';
+
+    const title = document.getElementById('adminTitle').value.trim();
+    const poster = document.getElementById('adminPoster').value.trim();
+    const venue = document.getElementById('adminVenue').value.trim();
+    const genre = document.getElementById('adminGenre').value;
+    const description = document.getElementById('adminDescription').value.trim();
+    const startDate = document.getElementById('adminStartDate').value;
+    const endDate = document.getElementById('adminEndDate').value;
+
+    if (!title) {
+      errorText.textContent = '연극 제목은 필수예요.';
+      return;
+    }
+
+    const playData = {
+      title,
+      genre,
+      poster_url: poster || null,
+      venue: venue || null,
+      description: description || null,
+      start_date: startDate || null,
+      end_date: endDate || null
+    };
+
+    let error;
+    let targetPlayId = editingPlayId;
+
+    if (editingPlayId) {
+      ({ error } = await supabaseClient.from('plays').update(playData).eq('id', editingPlayId));
+    } else {
+      const { data: newPlay, error: insertError } = await supabaseClient
+        .from('plays')
+        .insert(playData)
+        .select()
+        .single();
+      error = insertError;
+      if (newPlay) targetPlayId = newPlay.id;
+    }
+
+    if (error) {
+      errorText.textContent = (editingPlayId ? '수정' : '등록') + ' 중 오류: ' + error.message;
+      return;
+    }
+
+    if (targetPlayId) {
+      await saveCredits(targetPlayId);
+    }
+
+    alert(editingPlayId ? '연극 정보가 수정되었어요!' : '연극이 등록되었어요!');
+    modal.classList.remove('active');
+    editingPlayId = null;
+    submitBtn.textContent = '등록하기';
+
+    loadPlays();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
+  setupGenreFilter();
   setupAuthModal();
   updateAuthUI();
   setupReviewModal();
   setupMyPage();
+  setupAdminModal();
+  setupPersonModal();
 });

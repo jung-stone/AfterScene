@@ -169,11 +169,13 @@ a {
   margin-top: 40px;
 }
 
-/* ===== 반응형 (모바일) ===== */
+/* ===== 반응형 (모바일 전체 보강) ===== */
 @media (max-width: 600px) {
+  /* 헤더 */
   .header-inner {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .search-box {
@@ -181,8 +183,135 @@ a {
     order: 3;
   }
 
+  .nav-menu {
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  /* 히어로 */
+  .hero {
+    padding: 36px 16px 24px;
+  }
+
   .hero h1 {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .hero p {
+    font-size: 13px;
+  }
+
+  /* 연극 카드 그리드 */
+  .play-section {
+    padding: 20px 16px;
+  }
+
+  .play-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 17px;
+  }
+
+  /* 장르 필터 */
+  .genre-filter {
+    padding: 0 16px 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .genre-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  .genre-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  /* 모든 모달 공통 */
+  .modal-overlay {
+    align-items: flex-end;
+  }
+
+  .modal-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    border-radius: 16px 16px 0 0;
+    padding: 24px 18px;
+    box-sizing: border-box;
+  }
+
+  .mypage-box {
+    max-width: 100%;
+  }
+
+  .modal-box h2 {
+    font-size: 18px;
+    padding-right: 24px; /* 닫기 버튼과 겹치지 않도록 */
+  }
+
+  /* 마이페이지 통계 */
+  .mypage-stats {
+    gap: 10px;
+  }
+
+  .stat-item {
+    padding: 12px 14px;
+  }
+
+  /* 인물 참여작품 카드 */
+  .person-play-card img {
+    width: 38px;
+    height: 57px;
+  }
+
+  /* 크레딧 태그 영역 줄바꿈 여유 */
+  .credit-role-group {
+    line-height: 1.8;
+  }
+
+  /* 좋아요/관리자삭제 버튼 줄바꿈 */
+  .existing-review-card {
+    padding: 12px;
+  }
+
+  .like-btn,
+  .admin-delete-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* 관리자 등록 폼 라벨 여백 축소 */
+  .admin-label {
+    margin-top: 2px;
+  }
+
+  /* 푸터 */
+  .footer {
+    padding: 24px 16px;
+    font-size: 12px;
+  }
+}
+
+/* ===== 아주 작은 화면 (구형 소형 폰 등) ===== */
+@media (max-width: 360px) {
+  .play-grid {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  }
+
+  .logo {
+    font-size: 19px;
+  }
+
+  .nav-menu {
+    font-size: 12px;
   }
 }
 
@@ -448,4 +577,260 @@ a {
 
 .hidden {
   display: none !important;
+}
+
+/* ===== 관리자 등록 모달 ===== */
+.admin-label {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.modal-box input[type="date"] {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2e37;
+  background: #22252d;
+  color: #f5f5f5;
+  font-size: 14px;
+  outline: none;
+}
+
+#adminAddBtn {
+  color: #ff5a5f;
+  font-weight: 600;
+}
+
+/* ===== 마이페이지 후기 수정/삭제 버튼 ===== */
+.my-review-card {
+  position: relative;
+}
+
+.my-review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.my-review-actions button {
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.my-review-actions button:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.my-review-actions .delete-btn:hover {
+  border-color: #ff5a5f;
+  background: #ff5a5f;
+  color: white;
+}
+
+/* ===== 좋아요 버튼 ===== */
+.like-btn {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+
+.like-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.like-btn.liked {
+  background: #ff5a5f;
+  border-color: #ff5a5f;
+  color: white;
+}
+
+/* ===== 장르 필터 ===== */
+.genre-filter {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.genre-btn {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid #2a2e37;
+  background: #1c1f26;
+  color: #d1d5db;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.genre-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.genre-btn.active {
+  background: #ff5a5f;
+  border-color: #ff5a5f;
+  color: white;
+  font-weight: 600;
+}
+
+.modal-box select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2e37;
+  background: #22252d;
+  color: #f5f5f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.play-card {
+  position: relative;
+}
+
+.genre-badge {
+  font-size: 11px;
+  color: #ff5a5f;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+/* ===== 관리자 후기 삭제 버튼 ===== */
+.admin-delete-btn {
+  margin-top: 8px;
+  margin-left: 6px;
+  background: none;
+  border: 1px solid #ff5a5f;
+  color: #ff5a5f;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.admin-delete-btn:hover {
+  background: #ff5a5f;
+  color: white;
+}
+
+/* ===== 관리자: 연극 정보 수정 버튼 ===== */
+.admin-edit-play-btn {
+  display: block;
+  margin-bottom: 16px;
+  background: none;
+  border: 1px solid #ff5a5f;
+  color: #ff5a5f;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.admin-edit-play-btn:hover {
+  background: #ff5a5f;
+  color: white;
+}
+
+/* ===== 공연 정보 박스 (크레딧) ===== */
+.play-info-box {
+  margin-bottom: 16px;
+}
+
+.play-info-row {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.play-info-desc {
+  font-size: 13px;
+  color: #d1d5db;
+  margin: 8px 0 12px;
+  line-height: 1.5;
+}
+
+.credit-role-group {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.credit-role-label {
+  color: #6b7280;
+  margin-right: 8px;
+}
+
+.credit-tag {
+  background: #22252d;
+  border: 1px solid #2a2e37;
+  color: #f5f5f5;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+.credit-tag:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+/* ===== 인물 상세 - 참여 작품 목록 ===== */
+.person-play-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #22252d;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.person-play-card:hover {
+  background: #2a2e37;
+}
+
+.person-play-card img {
+  width: 44px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.person-play-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.person-play-role {
+  font-size: 12px;
+  color: #ff5a5f;
+  margin-top: 2px;
 }
