@@ -9,6 +9,8 @@ let editingReviewId = null;
 let editingPlayId = null;
 let isSignupMode = false;
 let currentGenre = '전체';
+let currentReviewSort = 'latest';
+let currentCommentReviewId = null;
 
 // ===== 연극 목록 =====
 async function loadPlays() {
@@ -30,18 +32,28 @@ function renderPlays(plays, containerId) {
   const container = document.getElementById(containerId);
 
   if (!plays || plays.length === 0) {
-    container.innerHTML = `<p class="placeholder-text">검색 결과가 없습니다.</p>`;
+    container.innerHTML = `<p class="placeholder-text">해당하는 연극이 없습니다.</p>`;
     return;
   }
 
-  container.innerHTML = plays.map(play => `
-    <div class="play-card" data-play-id="${play.id}" data-play-title="${play.title}">
-      <img src="${play.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${play.title}" />
-      <div class="genre-badge">${play.genre || '기타'}</div>
-      <div class="play-title">${play.title}</div>
-      <div class="play-rating">⭐ ${play.avg_rating ? play.avg_rating.toFixed(1) : '0.0'} (${play.review_count || 0}명)</div>
-    </div>
-  `).join('');
+  container.innerHTML = plays.map(play => {
+    let period = '기간 미정';
+    if (play.start_date && play.end_date) {
+      period = `${play.start_date} ~ ${play.end_date}`;
+    } else if (play.start_date) {
+      period = `${play.start_date} ~`;
+    }
+
+    return `
+      <div class="play-card" data-play-id="${play.id}" data-play-title="${play.title}">
+        <img src="${play.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${play.title}" />
+        <div class="genre-badge">${play.genre || '기타'}</div>
+        <div class="play-title">${play.title}</div>
+        <div class="play-period">${period}</div>
+        <div class="play-rating">⭐ ${play.avg_rating ? play.avg_rating.toFixed(1) : '0.0'} (${play.review_count || 0}명)</div>
+      </div>
+    `;
+  }).join('');
 
   container.querySelectorAll('.play-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -56,12 +68,17 @@ function setupSearch() {
 
   searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.trim().toLowerCase();
+    const ongoingSection = document.querySelector('#ongoingPlays').closest('.play-section');
+    const upcomingSection = document.querySelector('#upcomingPlays').closest('.play-section');
+    const endedSection = document.querySelector('#endedPlays').closest('.play-section');
+    const ongoingTitleEl = ongoingSection.querySelector('.section-title');
 
     if (keyword === '') {
-      applyGenreFilter();
       document.querySelector('.hero').style.display = 'block';
-      document.querySelector('#latestPlays').closest('.play-section').style.display = 'block';
-      document.querySelector('#popularPlays').closest('.play-section').querySelector('.section-title').textContent = '🔥 인기 연극';
+      upcomingSection.style.display = 'block';
+      endedSection.style.display = 'block';
+      ongoingTitleEl.textContent = '🎭 공연중';
+      applyGenreFilter();
       return;
     }
 
@@ -70,10 +87,11 @@ function setupSearch() {
     );
 
     document.querySelector('.hero').style.display = 'none';
-    document.querySelector('#latestPlays').closest('.play-section').style.display = 'none';
-    document.querySelector('#popularPlays').closest('.play-section').querySelector('.section-title').textContent = `🔍 "${e.target.value}" 검색 결과 (${filtered.length}건)`;
+    upcomingSection.style.display = 'none';
+    endedSection.style.display = 'none';
+    ongoingTitleEl.textContent = `🔍 "${e.target.value}" 검색 결과 (${filtered.length}건)`;
 
-    renderPlays(filtered, 'popularPlays');
+    renderPlays(filtered, 'ongoingPlays');
   });
 }
 
@@ -96,8 +114,46 @@ function applyGenreFilter() {
     ? allPlays
     : allPlays.filter(play => play.genre === currentGenre);
 
-  renderPlays(filtered, 'popularPlays');
-  renderPlays(filtered, 'latestPlays');
+  categorizeAndRenderPlays(filtered);
+}
+
+// 공연 기간을 기준으로 공연중/공연예정/공연종료로 자동 분류
+function categorizeAndRenderPlays(plays) {
+  const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD' 형식
+
+  const ongoing = [];
+  const upcoming = [];
+  const ended = [];
+
+  plays.forEach(play => {
+    const start = play.start_date;
+    const end = play.end_date;
+
+    if (!start && !end) {
+      ongoing.push(play); // 기간 정보가 없으면 일단 공연중으로 분류
+    } else if (start && start > today) {
+      upcoming.push(play);
+    } else if (end && end < today) {
+      ended.push(play);
+    } else {
+      ongoing.push(play);
+    }
+  });
+
+  // 첫 공연 날짜가 빠른 순서대로 정렬 (날짜 없는 항목은 맨 뒤로)
+  const sortByStartDate = (a, b) => {
+    if (!a.start_date) return 1;
+    if (!b.start_date) return -1;
+    return a.start_date.localeCompare(b.start_date);
+  };
+
+  ongoing.sort(sortByStartDate);
+  upcoming.sort(sortByStartDate);
+  ended.sort(sortByStartDate);
+
+  renderPlays(ongoing, 'ongoingPlays');
+  renderPlays(upcoming, 'upcomingPlays');
+  renderPlays(ended, 'endedPlays');
 }
 
 // ===== 로그인 / 회원가입 =====
@@ -285,6 +341,7 @@ function setupReviewModal() {
     }
 
     const rating = parseFloat(ratingInput.value);
+    const watchedDate = document.getElementById('watchedDateInput').value || null;
     const oneLine = document.getElementById('oneLineInput').value.trim();
     const detail = document.getElementById('detailInput').value.trim();
 
@@ -296,7 +353,7 @@ function setupReviewModal() {
     if (editingReviewId) {
       const { error: updateError } = await supabaseClient
         .from('reviews')
-        .update({ rating, one_line_review: oneLine, detail_review: detail })
+        .update({ rating, watched_date: watchedDate, one_line_review: oneLine, detail_review: detail })
         .eq('id', editingReviewId);
 
       if (updateError) {
@@ -311,6 +368,7 @@ function setupReviewModal() {
         play_id: currentPlayId,
         user_id: user.id,
         rating: rating,
+        watched_date: watchedDate,
         one_line_review: oneLine,
         detail_review: detail
       });
@@ -340,6 +398,7 @@ async function openReviewModal(playId, playTitle, editData = null) {
   document.getElementById('reviewPlayTitle').textContent = playTitle;
   document.getElementById('ratingInput').value = editData ? editData.rating : 3.5;
   document.getElementById('ratingValue').textContent = editData ? editData.rating : 3.5;
+  document.getElementById('watchedDateInput').value = editData ? (editData.watchedDate || '') : '';
   document.getElementById('oneLineInput').value = editData ? editData.oneLine : '';
   document.getElementById('detailInput').value = editData ? editData.detail : '';
   document.getElementById('reviewError').textContent = '';
@@ -499,6 +558,7 @@ async function loadPlayReviews(playId) {
   (profiles || []).forEach(p => { nicknameMap[p.id] = p.nickname; });
 
   const reviewIds = reviews.map(r => r.id);
+
   const { data: likes } = await supabaseClient
     .from('review_likes')
     .select('review_id, user_id')
@@ -515,6 +575,16 @@ async function loadPlayReviews(playId) {
     }
   });
 
+  const { data: comments } = await supabaseClient
+    .from('review_comments')
+    .select('review_id')
+    .in('review_id', reviewIds);
+
+  const commentCountMap = {};
+  (comments || []).forEach(c => {
+    commentCountMap[c.review_id] = (commentCountMap[c.review_id] || 0) + 1;
+  });
+
   let isCurrentUserAdmin = false;
   if (currentUser) {
     const { data: myProfile } = await supabaseClient
@@ -525,34 +595,53 @@ async function loadPlayReviews(playId) {
     isCurrentUserAdmin = !!(myProfile && myProfile.is_admin);
   }
 
-  listContainer.innerHTML = reviews.map(review => {
+  let sortedReviews = [...reviews];
+  if (currentReviewSort === 'likes') {
+    sortedReviews.sort((a, b) => (likeCountMap[b.id] || 0) - (likeCountMap[a.id] || 0));
+  }
+
+  listContainer.innerHTML = sortedReviews.map(review => {
     const date = new Date(review.created_at).toLocaleDateString('ko-KR');
     const nickname = nicknameMap[review.user_id] || '익명';
     const likeCount = likeCountMap[review.id] || 0;
+    const commentCount = commentCountMap[review.id] || 0;
     const isLiked = myLikedSet.has(review.id);
 
     return `
-      <div class="existing-review-card">
+      <div class="existing-review-card" data-review-id="${review.id}">
         <div class="review-top">
           <span class="review-rating">⭐ ${review.rating.toFixed(1)} · ${nickname}</span>
           <span class="review-date">${date}</span>
         </div>
         <div class="review-one-line">${review.one_line_review}</div>
         ${review.detail_review ? `<div class="review-detail">${review.detail_review}</div>` : ''}
-        <button class="like-btn ${isLiked ? 'liked' : ''}" data-review-id="${review.id}">
-          👍 <span class="like-count">${likeCount}</span>
-        </button>
-        ${isCurrentUserAdmin ? `<button class="admin-delete-btn" data-review-id="${review.id}">관리자 삭제</button>` : ''}
+        <div class="review-card-actions">
+          <button class="like-btn ${isLiked ? 'liked' : ''}" data-review-id="${review.id}">
+            👍 <span class="like-count">${likeCount}</span>
+          </button>
+          <span class="comment-count-tag">💬 ${commentCount}</span>
+          ${isCurrentUserAdmin ? `<button class="admin-delete-btn" data-review-id="${review.id}">관리자 삭제</button>` : ''}
+        </div>
       </div>
     `;
   }).join('');
 
+  listContainer.querySelectorAll('.existing-review-card').forEach(card => {
+    card.addEventListener('click', () => {
+      openCommentModal(card.dataset.reviewId);
+    });
+  });
+
   listContainer.querySelectorAll('.like-btn').forEach(btn => {
-    btn.addEventListener('click', () => toggleLike(btn));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLike(btn);
+    });
   });
 
   listContainer.querySelectorAll('.admin-delete-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       if (!confirm('관리자 권한으로 이 후기를 삭제하시겠어요?')) return;
 
       const { error } = await supabaseClient
@@ -641,7 +730,7 @@ async function loadMyReviews(userId) {
     .from('reviews')
     .select('*, plays(title, poster_url)')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('watched_date', { ascending: false, nullsFirst: false });
 
   if (error) {
     listContainer.innerHTML = `<p class="placeholder-text">후기를 불러오지 못했어요.</p>`;
@@ -660,18 +749,20 @@ async function loadMyReviews(userId) {
     const posterUrl = review.plays && review.plays.poster_url
       ? review.plays.poster_url
       : 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image';
-    const date = new Date(review.created_at).toLocaleDateString('ko-KR');
+    const watchedDateText = review.watched_date
+      ? `🎭 ${review.watched_date} 관람`
+      : new Date(review.created_at).toLocaleDateString('ko-KR') + ' 작성';
 
     return `
       <div class="my-review-card" data-review-id="${review.id}">
         <img class="my-review-poster" src="${posterUrl}" alt="${playTitle}" />
         <div class="my-review-content">
-          <div class="my-review-date">${date}</div>
+          <div class="my-review-date">${watchedDateText}</div>
           <div class="my-review-play-title">${playTitle}</div>
           <div class="my-review-rating">⭐ ${review.rating.toFixed(1)}</div>
           <div class="my-review-one-line">${review.one_line_review}</div>
           <div class="my-review-actions">
-            <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
+            <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-watched-date="${review.watched_date || ''}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
             <button class="delete-btn" data-review-id="${review.id}">삭제</button>
           </div>
         </div>
@@ -684,6 +775,7 @@ async function loadMyReviews(userId) {
       openReviewModal(btn.dataset.playId, btn.dataset.playTitle, {
         reviewId: btn.dataset.reviewId,
         rating: btn.dataset.rating,
+        watchedDate: btn.dataset.watchedDate,
         oneLine: btn.dataset.oneLine,
         detail: btn.dataset.detail
       });
@@ -856,6 +948,145 @@ function setupAdminModal() {
   });
 }
 
+// ===== 후기 정렬 =====
+function setupReviewSort() {
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentReviewSort = btn.dataset.sort;
+      if (currentPlayId) loadPlayReviews(currentPlayId);
+    });
+  });
+}
+
+// ===== 후기 댓글 =====
+async function openCommentModal(reviewId) {
+  currentCommentReviewId = reviewId;
+  document.getElementById('commentModal').classList.add('active');
+  document.getElementById('commentReviewDetail').innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+  document.getElementById('commentList').innerHTML = '';
+  document.getElementById('commentError').textContent = '';
+
+  const { data: review } = await supabaseClient
+    .from('reviews')
+    .select('*')
+    .eq('id', reviewId)
+    .single();
+
+  if (!review) return;
+
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('nickname')
+    .eq('id', review.user_id)
+    .maybeSingle();
+
+  const nickname = profile ? profile.nickname : '익명';
+  const date = new Date(review.created_at).toLocaleDateString('ko-KR');
+
+  document.getElementById('commentReviewDetail').innerHTML = `
+    <div class="review-top">
+      <span class="review-rating">⭐ ${review.rating.toFixed(1)} · ${nickname}</span>
+      <span class="review-date">${date}</span>
+    </div>
+    <div class="review-one-line">${review.one_line_review}</div>
+    ${review.detail_review ? `<div class="review-detail">${review.detail_review}</div>` : ''}
+  `;
+
+  loadComments(reviewId);
+}
+
+async function loadComments(reviewId) {
+  const listEl = document.getElementById('commentList');
+  listEl.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: comments, error } = await supabaseClient
+    .from('review_comments')
+    .select('*')
+    .eq('review_id', reviewId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    listEl.innerHTML = `<p class="placeholder-text">댓글을 불러오지 못했어요.</p>`;
+    return;
+  }
+
+  if (comments.length === 0) {
+    listEl.innerHTML = `<p class="placeholder-text">아직 댓글이 없어요. 첫 댓글을 남겨보세요!</p>`;
+    return;
+  }
+
+  const userIds = [...new Set(comments.map(c => c.user_id))];
+  const { data: profiles } = await supabaseClient
+    .from('profiles')
+    .select('id, nickname')
+    .in('id', userIds);
+  const nicknameMap = {};
+  (profiles || []).forEach(p => { nicknameMap[p.id] = p.nickname; });
+
+  const { data: { user: currentUser } } = await supabaseClient.auth.getUser();
+
+  listEl.innerHTML = comments.map(c => {
+    const nickname = nicknameMap[c.user_id] || '익명';
+    const date = new Date(c.created_at).toLocaleDateString('ko-KR');
+    const canDelete = currentUser && currentUser.id === c.user_id;
+    return `
+      <div class="comment-item">
+        <div class="comment-top">
+          <span class="comment-nickname">${nickname}</span>
+          <span class="comment-date">${date}</span>
+        </div>
+        <div class="comment-content">${c.content}</div>
+        ${canDelete ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.comment-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('댓글을 삭제하시겠어요?')) return;
+      await supabaseClient.from('review_comments').delete().eq('id', btn.dataset.commentId);
+      loadComments(reviewId);
+    });
+  });
+}
+
+function setupCommentModal() {
+  document.getElementById('closeCommentModal').addEventListener('click', () => {
+    document.getElementById('commentModal').classList.remove('active');
+  });
+
+  document.getElementById('commentSubmitBtn').addEventListener('click', async () => {
+    const errorText = document.getElementById('commentError');
+    errorText.textContent = '';
+    const input = document.getElementById('commentInput');
+    const content = input.value.trim();
+
+    if (!content) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      errorText.textContent = '로그인 후 이용해주세요.';
+      return;
+    }
+
+    const { error } = await supabaseClient.from('review_comments').insert({
+      review_id: currentCommentReviewId,
+      user_id: user.id,
+      content
+    });
+
+    if (error) {
+      errorText.textContent = '댓글 등록 중 오류: ' + error.message;
+      return;
+    }
+
+    input.value = '';
+    loadComments(currentCommentReviewId);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
@@ -866,4 +1097,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMyPage();
   setupAdminModal();
   setupPersonModal();
+  setupReviewSort();
+  setupCommentModal();
 });
