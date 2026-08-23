@@ -463,7 +463,13 @@ async function loadPlayInfo(playId) {
     const period = (play.start_date && play.end_date)
       ? `${play.start_date} ~ ${play.end_date}`
       : '';
-    html += `<div class="play-info-row">📍 ${play.venue || '장소 미정'}</div>`;
+
+    if (play.venue_id) {
+      html += `<div class="play-info-row">📍 <button class="venue-link-btn" data-venue-id="${play.venue_id}">${play.venue}</button></div>`;
+    } else {
+      html += `<div class="play-info-row">📍 ${play.venue || '장소 미정'}</div>`;
+    }
+
     if (period) html += `<div class="play-info-row">🗓 ${period}</div>`;
     if (play.description) html += `<div class="play-info-desc">${play.description}</div>`;
   }
@@ -484,15 +490,25 @@ async function loadPlayInfo(playId) {
       openPersonModal(btn.dataset.personId);
     });
   });
+
+  const venueBtn = box.querySelector('.venue-link-btn');
+  if (venueBtn) {
+    venueBtn.addEventListener('click', () => {
+      openVenueModal(venueBtn.dataset.venueId);
+    });
+  }
 }
 
 // ===== 인물 상세 모달 =====
 async function openPersonModal(personId) {
   document.getElementById('reviewModal').classList.remove('active');
+  document.getElementById('venueModal').classList.remove('active');
   document.getElementById('personModal').classList.add('active');
   document.getElementById('personName').textContent = '불러오는 중...';
+  document.getElementById('personAvgRating').textContent = '';
   document.getElementById('personBio').textContent = '';
   document.getElementById('personPlayList').innerHTML = '';
+  document.getElementById('personBioEditBox').classList.add('hidden');
 
   const { data: person } = await supabaseClient
     .from('people')
@@ -503,7 +519,7 @@ async function openPersonModal(personId) {
   if (!person) return;
 
   document.getElementById('personName').textContent = person.name;
-  document.getElementById('personBio').textContent = person.bio || '';
+  document.getElementById('personBio').textContent = person.bio || '아직 소개가 없어요.';
 
   const { data: credits } = await supabaseClient
     .from('play_credits')
@@ -511,28 +527,60 @@ async function openPersonModal(personId) {
     .eq('person_id', personId);
 
   const listEl = document.getElementById('personPlayList');
+  const playIds = [...new Set((credits || []).filter(c => c.plays).map(c => c.plays.id))];
+
+  if (playIds.length > 0) {
+    const { data: reviews } = await supabaseClient
+      .from('reviews')
+      .select('rating')
+      .in('play_id', playIds);
+
+    if (reviews && reviews.length > 0) {
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      document.getElementById('personAvgRating').textContent = `⭐ ${avg.toFixed(1)} (관람객 평균)`;
+    }
+  }
 
   if (!credits || credits.length === 0) {
     listEl.innerHTML = `<p class="placeholder-text">참여한 작품 정보가 없어요.</p>`;
-    return;
+  } else {
+    listEl.innerHTML = credits.filter(c => c.plays).map(c => `
+      <div class="person-play-card" data-play-id="${c.plays.id}" data-play-title="${c.plays.title}">
+        <img src="${c.plays.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${c.plays.title}" />
+        <div>
+          <div class="person-play-title">${c.plays.title}</div>
+          <div class="person-play-role">${c.role}</div>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.person-play-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.getElementById('personModal').classList.remove('active');
+        openReviewModal(card.dataset.playId, card.dataset.playTitle);
+      });
+    });
   }
 
-  listEl.innerHTML = credits.filter(c => c.plays).map(c => `
-    <div class="person-play-card" data-play-id="${c.plays.id}" data-play-title="${c.plays.title}">
-      <img src="${c.plays.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${c.plays.title}" />
-      <div>
-        <div class="person-play-title">${c.plays.title}</div>
-        <div class="person-play-role">${c.role}</div>
-      </div>
-    </div>
-  `).join('');
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
 
-  listEl.querySelectorAll('.person-play-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.getElementById('personModal').classList.remove('active');
-      openReviewModal(card.dataset.playId, card.dataset.playTitle);
-    });
-  });
+    if (profile && profile.is_admin) {
+      document.getElementById('personBioEditBox').classList.remove('hidden');
+      document.getElementById('personBioInput').value = person.bio || '';
+      document.getElementById('personBioSaveBtn').onclick = async () => {
+        const newBio = document.getElementById('personBioInput').value.trim();
+        await supabaseClient.from('people').update({ bio: newBio }).eq('id', personId);
+        document.getElementById('personBio').textContent = newBio || '아직 소개가 없어요.';
+        alert('소개가 저장되었어요.');
+      };
+    }
+  }
 }
 
 function setupPersonModal() {
@@ -1037,6 +1085,120 @@ async function findOrCreatePersonId(name) {
   return created.id;
 }
 
+async function findOrCreateVenueId(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  const { data: existing } = await supabaseClient
+    .from('venues')
+    .select('id')
+    .eq('name', trimmed)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created, error } = await supabaseClient
+    .from('venues')
+    .insert({ name: trimmed })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('극장 생성 오류:', error);
+    return null;
+  }
+  return created.id;
+}
+
+// ===== 극장 상세 모달 =====
+async function openVenueModal(venueId) {
+  document.getElementById('reviewModal').classList.remove('active');
+  document.getElementById('personModal').classList.remove('active');
+  document.getElementById('venueModal').classList.add('active');
+  document.getElementById('venueName').textContent = '불러오는 중...';
+  document.getElementById('venueAvgRating').textContent = '';
+  document.getElementById('venueBio').textContent = '';
+  document.getElementById('venuePlayList').innerHTML = '';
+  document.getElementById('venueBioEditBox').classList.add('hidden');
+
+  const { data: venue } = await supabaseClient
+    .from('venues')
+    .select('*')
+    .eq('id', venueId)
+    .single();
+
+  if (!venue) return;
+
+  document.getElementById('venueName').textContent = venue.name;
+  document.getElementById('venueBio').textContent = venue.description || '아직 소개가 없어요.';
+
+  const { data: plays } = await supabaseClient
+    .from('plays')
+    .select('id, title, poster_url')
+    .eq('venue_id', venueId);
+
+  const listEl = document.getElementById('venuePlayList');
+  const playIds = (plays || []).map(p => p.id);
+
+  if (playIds.length > 0) {
+    const { data: reviews } = await supabaseClient
+      .from('reviews')
+      .select('rating')
+      .in('play_id', playIds);
+
+    if (reviews && reviews.length > 0) {
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      document.getElementById('venueAvgRating').textContent = `⭐ ${avg.toFixed(1)} (관람객 평균)`;
+    }
+  }
+
+  if (!plays || plays.length === 0) {
+    listEl.innerHTML = `<p class="placeholder-text">등록된 공연 정보가 없어요.</p>`;
+  } else {
+    listEl.innerHTML = plays.map(p => `
+      <div class="person-play-card" data-play-id="${p.id}" data-play-title="${p.title}">
+        <img src="${p.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${p.title}" />
+        <div>
+          <div class="person-play-title">${p.title}</div>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.person-play-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.getElementById('venueModal').classList.remove('active');
+        openReviewModal(card.dataset.playId, card.dataset.playTitle);
+      });
+    });
+  }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+
+    if (profile && profile.is_admin) {
+      document.getElementById('venueBioEditBox').classList.remove('hidden');
+      document.getElementById('venueBioInput').value = venue.description || '';
+      document.getElementById('venueBioSaveBtn').onclick = async () => {
+        const newDesc = document.getElementById('venueBioInput').value.trim();
+        await supabaseClient.from('venues').update({ description: newDesc }).eq('id', venueId);
+        document.getElementById('venueBio').textContent = newDesc || '아직 소개가 없어요.';
+        alert('소개가 저장되었어요.');
+      };
+    }
+  }
+}
+
+function setupVenueModal() {
+  document.getElementById('closeVenueModal').addEventListener('click', () => {
+    document.getElementById('venueModal').classList.remove('active');
+  });
+}
+
 async function saveCredits(playId) {
   const roleFields = {
     '연출': 'adminDirector',
@@ -1112,11 +1274,14 @@ function setupAdminModal() {
       return;
     }
 
+    const venueId = venue ? await findOrCreateVenueId(venue) : null;
+
     const playData = {
       title,
       genre,
       poster_url: poster || null,
       venue: venue || null,
+      venue_id: venueId,
       description: description || null,
       start_date: startDate || null,
       end_date: endDate || null
@@ -1304,6 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMyPage();
   setupAdminModal();
   setupPersonModal();
+  setupVenueModal();
   setupReviewSort();
   setupCommentModal();
 });

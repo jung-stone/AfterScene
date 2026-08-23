@@ -185,10 +185,34 @@
     <div class="modal-box mypage-box">
       <button class="modal-close" id="closePersonModal">&times;</button>
       <h2 id="personName">이름</h2>
+      <div class="archive-avg-rating" id="personAvgRating"></div>
       <p class="mypage-email" id="personBio"></p>
+
+      <div class="admin-bio-edit hidden" id="personBioEditBox">
+        <textarea id="personBioInput" rows="3" placeholder="소개를 입력하세요"></textarea>
+        <button id="personBioSaveBtn">소개 저장</button>
+      </div>
 
       <h3 class="mypage-section-title">참여 작품</h3>
       <div class="person-play-list" id="personPlayList"></div>
+    </div>
+  </div>
+
+    <!-- 극장 상세 모달 -->
+  <div class="modal-overlay" id="venueModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeVenueModal">&times;</button>
+      <h2 id="venueName">극장</h2>
+      <div class="archive-avg-rating" id="venueAvgRating"></div>
+      <p class="mypage-email" id="venueBio"></p>
+
+      <div class="admin-bio-edit hidden" id="venueBioEditBox">
+        <textarea id="venueBioInput" rows="3" placeholder="극장 소개를 입력하세요"></textarea>
+        <button id="venueBioSaveBtn">소개 저장</button>
+      </div>
+
+      <h3 class="mypage-section-title">공연된 작품</h3>
+      <div class="person-play-list" id="venuePlayList"></div>
     </div>
   </div>
 
