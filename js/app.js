@@ -657,16 +657,23 @@ async function loadMyReviews(userId) {
 
   listContainer.innerHTML = reviews.map(review => {
     const playTitle = review.plays ? review.plays.title : '삭제된 연극';
+    const posterUrl = review.plays && review.plays.poster_url
+      ? review.plays.poster_url
+      : 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image';
     const date = new Date(review.created_at).toLocaleDateString('ko-KR');
+
     return `
       <div class="my-review-card" data-review-id="${review.id}">
-        <div class="review-play-title">${playTitle}</div>
-        <div class="review-rating">⭐ ${review.rating.toFixed(1)}</div>
-        <div class="review-one-line">"${review.one_line_review}"</div>
-        <div class="review-date">${date}</div>
-        <div class="my-review-actions">
-          <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
-          <button class="delete-btn" data-review-id="${review.id}">삭제</button>
+        <img class="my-review-poster" src="${posterUrl}" alt="${playTitle}" />
+        <div class="my-review-content">
+          <div class="my-review-date">${date}</div>
+          <div class="my-review-play-title">${playTitle}</div>
+          <div class="my-review-rating">⭐ ${review.rating.toFixed(1)}</div>
+          <div class="my-review-one-line">${review.one_line_review}</div>
+          <div class="my-review-actions">
+            <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
+            <button class="delete-btn" data-review-id="${review.id}">삭제</button>
+          </div>
         </div>
       </div>
     `;

@@ -500,34 +500,106 @@ a {
   border-top: 1px solid #2a2e37;
 }
 
+/* ===== 마이페이지 - 타임라인 후기 카드 ===== */
 .my-review-card {
+  display: flex;
+  gap: 14px;
   background: #22252d;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  position: relative;
 }
 
-.my-review-card .review-play-title {
+.my-review-poster {
+  width: 64px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #14161a;
+}
+
+.my-review-content {
+  flex: 1;
+  min-width: 0;   /* 텍스트 넘칠 때 줄임표 처리 위해 필요 */
+  display: flex;
+  flex-direction: column;
+}
+
+.my-review-date {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.my-review-play-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.my-review-card .review-rating {
+.my-review-rating {
   color: #ff5a5f;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
   margin-bottom: 6px;
 }
 
-.my-review-card .review-one-line {
+.my-review-one-line {
   font-size: 13px;
   color: #d1d5db;
-  margin-bottom: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
 }
 
-.my-review-card .review-date {
+.my-review-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.my-review-actions button {
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
   font-size: 11px;
-  color: #6b7280;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.my-review-actions button:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.my-review-actions .delete-btn:hover {
+  background: #ff5a5f;
+  color: white;
+}
+
+/* 모바일: 살짝 더 컴팩트하게 */
+@media (max-width: 600px) {
+  .my-review-poster {
+    width: 54px;
+    height: 81px;
+  }
+
+  .my-review-play-title {
+    font-size: 14px;
+  }
+
+  .my-review-one-line {
+    font-size: 12.5px;
+  }
 }
 
 /* ===== 기존 후기 목록 (리뷰 작성 모달 내) ===== */
