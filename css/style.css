@@ -1027,3 +1027,159 @@ a {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ===== 마이페이지 - 나의 관람 취향 ===== */
+.taste-stats {
+  margin-bottom: 24px;
+}
+
+.taste-avg-rating {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.taste-avg-rating .taste-avg-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ff5a5f;
+}
+
+.taste-avg-rating .taste-avg-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.taste-group {
+  margin-bottom: 16px;
+}
+
+.taste-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.taste-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.taste-rank-num {
+  width: 18px;
+  color: #ff5a5f;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.taste-rank-name {
+  flex: 1;
+  color: #f5f5f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taste-rank-count {
+  color: #6b7280;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ===== 다회차 관람 아코디언 ===== */
+.review-group {
+  margin-bottom: 12px;
+  background: #1c1f26;
+  border: 1px solid #2a2e37;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.review-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.review-group-header:hover {
+  background: #22252d;
+}
+
+.review-group-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-group-badge {
+  font-size: 11px;
+  background: #ff5a5f;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.review-group-summary {
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.review-group-toggle {
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.review-group.expanded .review-group-toggle {
+  transform: rotate(180deg);
+}
+
+.review-group-body {
+  display: none;
+  padding: 0 14px 12px;
+}
+
+.review-group.expanded .review-group-body {
+  display: block;
+}
+
+.review-visit-item {
+  margin-top: 8px;
+}
+
+.review-visit-round {
+  color: #ff5a5f;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.diff-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: #2a2e37;
+  color: #ff5a5f;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  margin-right: 4px;
+}
+
+.seat-tag {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}

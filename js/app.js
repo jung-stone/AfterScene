@@ -342,6 +342,8 @@ function setupReviewModal() {
 
     const rating = parseFloat(ratingInput.value);
     const watchedDate = document.getElementById('watchedDateInput').value || null;
+    const watchedCast = document.getElementById('watchedCastInput').value.trim() || null;
+    const seatInfo = document.getElementById('seatInput').value.trim() || null;
     const oneLine = document.getElementById('oneLineInput').value.trim();
     const detail = document.getElementById('detailInput').value.trim();
 
@@ -353,7 +355,14 @@ function setupReviewModal() {
     if (editingReviewId) {
       const { error: updateError } = await supabaseClient
         .from('reviews')
-        .update({ rating, watched_date: watchedDate, one_line_review: oneLine, detail_review: detail })
+        .update({
+          rating,
+          watched_date: watchedDate,
+          watched_cast: watchedCast,
+          seat_info: seatInfo,
+          one_line_review: oneLine,
+          detail_review: detail
+        })
         .eq('id', editingReviewId);
 
       if (updateError) {
@@ -369,6 +378,8 @@ function setupReviewModal() {
         user_id: user.id,
         rating: rating,
         watched_date: watchedDate,
+        watched_cast: watchedCast,
+        seat_info: seatInfo,
         one_line_review: oneLine,
         detail_review: detail
       });
@@ -399,6 +410,8 @@ async function openReviewModal(playId, playTitle, editData = null) {
   document.getElementById('ratingInput').value = editData ? editData.rating : 3.5;
   document.getElementById('ratingValue').textContent = editData ? editData.rating : 3.5;
   document.getElementById('watchedDateInput').value = editData ? (editData.watchedDate || '') : '';
+  document.getElementById('watchedCastInput').value = editData ? (editData.watchedCast || '') : '';
+  document.getElementById('seatInput').value = editData ? (editData.seatInfo || '') : '';
   document.getElementById('oneLineInput').value = editData ? editData.oneLine : '';
   document.getElementById('detailInput').value = editData ? editData.detail : '';
   document.getElementById('reviewError').textContent = '';
@@ -595,24 +608,46 @@ async function loadPlayReviews(playId) {
     isCurrentUserAdmin = !!(myProfile && myProfile.is_admin);
   }
 
-  let sortedReviews = [...reviews];
+  // 사용자별로 그룹핑
+  const groups = {};
+  reviews.forEach(r => {
+    if (!groups[r.user_id]) groups[r.user_id] = [];
+    groups[r.user_id].push(r);
+  });
+
+  const groupArray = Object.entries(groups).map(([uid, list]) => {
+    const sortedVisits = [...list].sort((a, b) => {
+      const ad = a.watched_date || a.created_at;
+      const bd = b.watched_date || b.created_at;
+      return ad < bd ? -1 : ad > bd ? 1 : 0;
+    });
+    const totalLikes = list.reduce((s, r) => s + (likeCountMap[r.id] || 0), 0);
+    const latestCreated = list.reduce((max, r) => (r.created_at > max ? r.created_at : max), list[0].created_at);
+    const avgRating = list.reduce((s, r) => s + r.rating, 0) / list.length;
+    return { userId: uid, visits: sortedVisits, count: list.length, totalLikes, latestCreated, avgRating };
+  });
+
   if (currentReviewSort === 'likes') {
-    sortedReviews.sort((a, b) => (likeCountMap[b.id] || 0) - (likeCountMap[a.id] || 0));
+    groupArray.sort((a, b) => b.totalLikes - a.totalLikes);
+  } else {
+    groupArray.sort((a, b) => (b.latestCreated > a.latestCreated ? 1 : -1));
   }
 
-  listContainer.innerHTML = sortedReviews.map(review => {
-    const date = new Date(review.created_at).toLocaleDateString('ko-KR');
+  function renderVisitRow(review, roundLabel, diffTagHtml) {
     const nickname = nicknameMap[review.user_id] || '익명';
+    const date = review.watched_date || new Date(review.created_at).toLocaleDateString('ko-KR');
     const likeCount = likeCountMap[review.id] || 0;
     const commentCount = commentCountMap[review.id] || 0;
     const isLiked = myLikedSet.has(review.id);
 
     return `
-      <div class="existing-review-card" data-review-id="${review.id}">
+      <div class="existing-review-card review-visit-item" data-review-id="${review.id}">
         <div class="review-top">
-          <span class="review-rating">⭐ ${review.rating.toFixed(1)} · ${nickname}</span>
+          <span class="review-rating">${roundLabel ? `<span class="review-visit-round">${roundLabel}</span>` : ''}⭐ ${review.rating.toFixed(1)}${roundLabel ? '' : ' · ' + nickname}</span>
           <span class="review-date">${date}</span>
         </div>
+        ${diffTagHtml || ''}
+        ${review.seat_info ? `<div class="seat-tag">💺 ${review.seat_info}</div>` : ''}
         <div class="review-one-line">${review.one_line_review}</div>
         ${review.detail_review ? `<div class="review-detail">${review.detail_review}</div>` : ''}
         <div class="review-card-actions">
@@ -624,7 +659,69 @@ async function loadPlayReviews(playId) {
         </div>
       </div>
     `;
-  }).join('');
+  }
+
+  let html = '';
+
+  groupArray.forEach(group => {
+    const nickname = nicknameMap[group.userId] || '익명';
+
+    if (group.count === 1) {
+      html += renderVisitRow(group.visits[0], null, null);
+      return;
+    }
+
+    let badge = '🔁 재관람';
+    if (group.count >= 7) badge = '🎡 회전문의 신';
+    else if (group.count >= 4) badge = '🎯 단골';
+
+    let visitsHtml = '';
+    let prevCast = null;
+
+    group.visits.forEach((review, idx) => {
+      const round = `${idx + 1}회차`;
+      let diffTagHtml = '';
+      const castList = (review.watched_cast || '').split(',').map(s => s.trim()).filter(Boolean);
+
+      if (idx === 0) {
+        diffTagHtml = `<div class="diff-tag">🆕 첫 관람</div>`;
+      } else if (castList.length > 0 && prevCast) {
+        const changed = castList.filter(c => !prevCast.includes(c));
+        if (changed.length > 0) {
+          diffTagHtml = `<div class="diff-tag">🔄 캐스팅 변경: ${changed.join(', ')}</div>`;
+        }
+      }
+
+      if (castList.length > 0) prevCast = castList;
+      visitsHtml += renderVisitRow(review, round, diffTagHtml);
+    });
+
+    html += `
+      <div class="review-group" data-group-id="${group.userId}">
+        <div class="review-group-header">
+          <div>
+            <span class="review-group-title">${nickname}</span>
+            <span class="review-group-badge">${badge}</span>
+          </div>
+          <div class="review-group-summary">
+            ${group.count}회 관람 · 평균 ⭐ ${group.avgRating.toFixed(1)}
+            <span class="review-group-toggle">▾</span>
+          </div>
+        </div>
+        <div class="review-group-body">
+          ${visitsHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  listContainer.innerHTML = html;
+
+  listContainer.querySelectorAll('.review-group-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.closest('.review-group').classList.toggle('expanded');
+    });
+  });
 
   listContainer.querySelectorAll('.existing-review-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -714,6 +811,7 @@ function setupMyPage() {
 
     document.getElementById('myPageEmail').textContent = user.email;
     modal.classList.add('active');
+    loadMyStats(user.id);
     loadMyReviews(user.id);
   });
 
@@ -762,7 +860,16 @@ async function loadMyReviews(userId) {
           <div class="my-review-rating">⭐ ${review.rating.toFixed(1)}</div>
           <div class="my-review-one-line">${review.one_line_review}</div>
           <div class="my-review-actions">
-            <button class="edit-btn" data-review-id="${review.id}" data-play-id="${review.play_id}" data-rating="${review.rating}" data-watched-date="${review.watched_date || ''}" data-one-line="${review.one_line_review}" data-detail="${review.detail_review || ''}" data-play-title="${playTitle}">수정</button>
+            <button class="edit-btn"
+              data-review-id="${review.id}"
+              data-play-id="${review.play_id}"
+              data-rating="${review.rating}"
+              data-watched-date="${review.watched_date || ''}"
+              data-watched-cast="${review.watched_cast || ''}"
+              data-seat-info="${review.seat_info || ''}"
+              data-one-line="${review.one_line_review}"
+              data-detail="${review.detail_review || ''}"
+              data-play-title="${playTitle}">수정</button>
             <button class="delete-btn" data-review-id="${review.id}">삭제</button>
           </div>
         </div>
@@ -776,6 +883,8 @@ async function loadMyReviews(userId) {
         reviewId: btn.dataset.reviewId,
         rating: btn.dataset.rating,
         watchedDate: btn.dataset.watchedDate,
+        watchedCast: btn.dataset.watchedCast,
+        seatInfo: btn.dataset.seatInfo,
         oneLine: btn.dataset.oneLine,
         detail: btn.dataset.detail
       });
@@ -802,6 +911,104 @@ async function loadMyReviews(userId) {
       loadPlays();
     });
   });
+}
+
+// ===== 마이페이지 - 나의 관람 취향 통계 =====
+async function loadMyStats(userId) {
+  const box = document.getElementById('tasteStats');
+  box.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: reviews, error } = await supabaseClient
+    .from('reviews')
+    .select('rating, play_id')
+    .eq('user_id', userId);
+
+  if (error || !reviews || reviews.length === 0) {
+    box.innerHTML = `<p class="placeholder-text">아직 데이터가 없어요. 후기를 남겨보세요!</p>`;
+    return;
+  }
+
+  // 평균 별점
+  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+
+  const playIds = [...new Set(reviews.map(r => r.play_id))];
+
+  // 극장 정보
+  const { data: plays } = await supabaseClient
+    .from('plays')
+    .select('id, venue')
+    .in('id', playIds);
+
+  const venueByPlay = {};
+  (plays || []).forEach(p => { venueByPlay[p.id] = p.venue || '장소 미정'; });
+
+  const venueCount = {};
+  reviews.forEach(r => {
+    const venue = venueByPlay[r.play_id] || '장소 미정';
+    venueCount[venue] = (venueCount[venue] || 0) + 1;
+  });
+
+  // 출연진 / 제작진 정보
+  const { data: credits } = await supabaseClient
+    .from('play_credits')
+    .select('play_id, role, people(name)')
+    .in('play_id', playIds)
+    .in('role', ['출연진', '제작진']);
+
+  const creditsByPlay = {};
+  (credits || []).forEach(c => {
+    if (!c.people) return;
+    if (!creditsByPlay[c.play_id]) creditsByPlay[c.play_id] = { 출연진: [], 제작진: [] };
+    creditsByPlay[c.play_id][c.role].push(c.people.name);
+  });
+
+  const actorCount = {};
+  const staffCount = {};
+
+  reviews.forEach(r => {
+    const info = creditsByPlay[r.play_id];
+    if (!info) return;
+    info['출연진'].forEach(name => { actorCount[name] = (actorCount[name] || 0) + 1; });
+    info['제작진'].forEach(name => { staffCount[name] = (staffCount[name] || 0) + 1; });
+  });
+
+  const toRankList = (countMap, limit = 3) => {
+    return Object.entries(countMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit);
+  };
+
+  const renderRankGroup = (title, list, unit) => {
+    if (list.length === 0) {
+      return `<div class="taste-group">
+        <div class="taste-group-title">${title}</div>
+        <p class="placeholder-text">아직 데이터가 없어요.</p>
+      </div>`;
+    }
+    return `<div class="taste-group">
+      <div class="taste-group-title">${title}</div>
+      ${list.map((item, i) => `
+        <div class="taste-rank-item">
+          <span class="taste-rank-num">${i + 1}</span>
+          <span class="taste-rank-name">${item[0]}</span>
+          <span class="taste-rank-count">${item[1]}${unit}</span>
+        </div>
+      `).join('')}
+    </div>`;
+  };
+
+  let html = `
+    <div class="taste-avg-rating">
+      <div class="taste-avg-number">⭐ ${avgRating.toFixed(1)}</div>
+      <div class="taste-avg-label">나의 평균 별점</div>
+    </div>
+  `;
+
+  html += renderRankGroup('🎭 자주 본 배우', toRankList(actorCount), '회');
+  html += renderRankGroup('🎬 자주 본 제작진', toRankList(staffCount), '회');
+  html += renderRankGroup('📍 자주 간 극장', toRankList(venueCount), '회');
+
+  box.innerHTML = html;
 }
 
 // ===== 관리자: 연극 등록/수정 + 크레딧 저장 =====

@@ -96,6 +96,10 @@
 
       <label class="admin-label">관람 날짜</label>
       <input type="date" id="watchedDateInput" />
+      <label class="admin-label">관람 캐스팅 (선택, 배우 이름)</label>
+      <input type="text" id="watchedCastInput" placeholder="예: 홍길동 (더블캐스팅 작품일 때만)" />
+      <label class="admin-label">좌석 (선택)</label>
+      <input type="text" id="seatInput" placeholder="예: 1층 A구역 5열 12번" />
 
       <input type="text" id="oneLineInput" placeholder="한 줄 평을 남겨주세요" maxlength="60" />
       <textarea id="detailInput" placeholder="상세 후기를 자유롭게 작성해주세요" rows="5"></textarea>
@@ -126,6 +130,9 @@
           <div class="stat-number" id="myReviewCount">0</div>
           <div class="stat-label">작성한 후기</div>
         </div>
+      </div>
+      <div class="taste-stats" id="tasteStats">
+        <p class="placeholder-text">불러오는 중...</p>
       </div>
 
       <h3 class="mypage-section-title">내가 남긴 후기</h3>
