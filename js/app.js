@@ -672,7 +672,11 @@ async function loadPlayReviews(playId) {
     const totalLikes = list.reduce((s, r) => s + (likeCountMap[r.id] || 0), 0);
     const latestCreated = list.reduce((max, r) => (r.created_at > max ? r.created_at : max), list[0].created_at);
     const avgRating = list.reduce((s, r) => s + r.rating, 0) / list.length;
-    return { userId: uid, visits: sortedVisits, count: list.length, totalLikes, latestCreated, avgRating };
+
+    // 대표 후기: 본인이 지정한 게 있으면 그걸, 없으면 가장 최근 관람(sortedVisits 마지막)
+    const representative = sortedVisits.find(v => v.is_representative) || sortedVisits[sortedVisits.length - 1];
+
+    return { userId: uid, visits: sortedVisits, count: list.length, totalLikes, latestCreated, avgRating, representative };
   });
 
   if (currentReviewSort === 'likes') {
@@ -681,12 +685,21 @@ async function loadPlayReviews(playId) {
     groupArray.sort((a, b) => (b.latestCreated > a.latestCreated ? 1 : -1));
   }
 
-  function renderVisitRow(review, roundLabel, diffTagHtml) {
+  function renderVisitRow(review, roundLabel, diffTagHtml, group) {
     const nickname = nicknameMap[review.user_id] || '익명';
     const date = review.watched_date || new Date(review.created_at).toLocaleDateString('ko-KR');
     const likeCount = likeCountMap[review.id] || 0;
     const commentCount = commentCountMap[review.id] || 0;
     const isLiked = myLikedSet.has(review.id);
+    const isOwner = currentUser && group && currentUser.id === group.userId;
+    const isRep = group && group.representative.id === review.id;
+
+    let repControl = '';
+    if (isOwner && group.count > 1) {
+      repControl = isRep
+        ? `<span class="representative-tag">★ 대표 후기</span>`
+        : `<button class="set-representative-btn" data-review-id="${review.id}" data-user-id="${group.userId}" data-play-id="${playId}">대표 후기로 설정</button>`;
+    }
 
     return `
       <div class="existing-review-card review-visit-item" data-review-id="${review.id}">
@@ -705,6 +718,7 @@ async function loadPlayReviews(playId) {
           <span class="comment-count-tag">💬 ${commentCount}</span>
           ${isCurrentUserAdmin ? `<button class="admin-delete-btn" data-review-id="${review.id}">관리자 삭제</button>` : ''}
         </div>
+        ${repControl}
       </div>
     `;
   }
@@ -715,13 +729,31 @@ async function loadPlayReviews(playId) {
     const nickname = nicknameMap[group.userId] || '익명';
 
     if (group.count === 1) {
-      html += renderVisitRow(group.visits[0], null, null);
+      html += renderVisitRow(group.visits[0], null, null, group);
       return;
     }
 
     let badge = '🔁 재관람';
     if (group.count >= 7) badge = '🎡 회전문의 신';
     else if (group.count >= 4) badge = '🎯 단골';
+
+    // 대표 후기 미리보기 (항상 보임, 클릭하면 펼쳐짐)
+    const rep = group.representative;
+    const repDate = rep.watched_date || new Date(rep.created_at).toLocaleDateString('ko-KR');
+    const repIsRepTag = group.visits.some(v => v.is_representative)
+      ? `<span class="diff-tag">★ 지정된 대표 후기</span>`
+      : `<span class="diff-tag">🕐 최신 관람 후기</span>`;
+
+    const previewHtml = `
+      <div class="review-group-preview">
+        <div class="review-top">
+          <span class="review-rating">⭐ ${rep.rating.toFixed(1)} · ${nickname}</span>
+          <span class="review-date">${repDate}</span>
+        </div>
+        ${repIsRepTag}
+        <div class="review-one-line">${rep.one_line_review}</div>
+      </div>
+    `;
 
     let visitsHtml = '';
     let prevCast = null;
@@ -741,7 +773,7 @@ async function loadPlayReviews(playId) {
       }
 
       if (castList.length > 0) prevCast = castList;
-      visitsHtml += renderVisitRow(review, round, diffTagHtml);
+      visitsHtml += renderVisitRow(review, round, diffTagHtml, group);
     });
 
     html += `
@@ -756,6 +788,7 @@ async function loadPlayReviews(playId) {
             <span class="review-group-toggle">▾</span>
           </div>
         </div>
+        ${previewHtml}
         <div class="review-group-body">
           ${visitsHtml}
         </div>
@@ -765,14 +798,15 @@ async function loadPlayReviews(playId) {
 
   listContainer.innerHTML = html;
 
-  listContainer.querySelectorAll('.review-group-header').forEach(header => {
-    header.addEventListener('click', () => {
-      header.closest('.review-group').classList.toggle('expanded');
+  listContainer.querySelectorAll('.review-group-header, .review-group-preview').forEach(el => {
+    el.addEventListener('click', () => {
+      el.closest('.review-group').classList.toggle('expanded');
     });
   });
 
   listContainer.querySelectorAll('.existing-review-card').forEach(card => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.set-representative-btn')) return;
       openCommentModal(card.dataset.reviewId);
     });
   });
@@ -781,6 +815,13 @@ async function loadPlayReviews(playId) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleLike(btn);
+    });
+  });
+
+  listContainer.querySelectorAll('.set-representative-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await setRepresentativeReview(btn.dataset.reviewId, btn.dataset.userId, btn.dataset.playId);
     });
   });
 
@@ -804,6 +845,27 @@ async function loadPlayReviews(playId) {
       loadPlays();
     });
   });
+}
+
+// 대표 후기 지정 (같은 사용자+같은 연극 안에서 하나만 true가 되도록)
+async function setRepresentativeReview(reviewId, userId, playId) {
+  await supabaseClient
+    .from('reviews')
+    .update({ is_representative: false })
+    .eq('user_id', userId)
+    .eq('play_id', playId);
+
+  const { error } = await supabaseClient
+    .from('reviews')
+    .update({ is_representative: true })
+    .eq('id', reviewId);
+
+  if (error) {
+    alert('대표 후기 설정 중 오류가 발생했어요: ' + error.message);
+    return;
+  }
+
+  loadPlayReviews(playId);
 }
 
 async function toggleLike(btn) {

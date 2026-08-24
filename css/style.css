@@ -1230,3 +1230,38 @@ a {
   padding: 0;
   text-decoration: underline;
 }
+
+/* ===== 대표 후기 미리보기 ===== */
+.review-group-preview {
+  padding: 0 14px 12px;
+  cursor: pointer;
+}
+
+.review-group-preview .diff-tag {
+  background: #ff5a5f;
+  color: white;
+}
+
+.set-representative-btn {
+  margin-top: 6px;
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.set-representative-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.representative-tag {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ff5a5f;
+  font-weight: 700;
+}
