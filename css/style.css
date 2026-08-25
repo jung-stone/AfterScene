@@ -1265,3 +1265,57 @@ a {
   color: #ff5a5f;
   font-weight: 700;
 }
+
+/* ===== KOPIS 검색 ===== */
+.kopis-result-list {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 14px;
+}
+
+.kopis-card {
+  cursor: pointer;
+}
+
+.kopis-card img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #22252d;
+}
+
+.kopis-card-title {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kopis-card-period,
+.kopis-card-venue {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.kopis-detail-poster {
+  width: 100%;
+  max-width: 200px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.kopis-detail-row {
+  font-size: 13px;
+  color: #d1d5db;
+  margin-bottom: 6px;
+}
+
+.kopis-detail-row b {
+  color: #f5f5f5;
+  margin-right: 6px;
+}

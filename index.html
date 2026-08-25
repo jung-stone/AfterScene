@@ -19,6 +19,7 @@
 
       <nav class="nav-menu">
         <a href="#" id="adminAddBtn" class="hidden">+ 연극 등록</a>
+        <a href="#" id="kopisSearchBtn">🔍 KOPIS 검색</a>
         <a href="#" id="myPageBtn">마이페이지</a>
         <a href="#" id="loginBtn">로그인</a>
       </nav>
@@ -230,6 +231,27 @@
         <button id="commentSubmitBtn">등록</button>
       </div>
       <p class="modal-error" id="commentError"></p>
+    </div>
+  </div>
+
+  <!-- KOPIS 공연 검색 모달 -->
+  <div class="modal-overlay" id="kopisModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeKopisModal">&times;</button>
+      <h2>KOPIS 공연 검색</h2>
+
+      <input type="text" id="kopisSearchInput" placeholder="공연 제목으로 검색" />
+      <button class="modal-submit-btn" id="kopisSearchSubmitBtn">검색</button>
+
+      <div class="kopis-result-list" id="kopisResultList"></div>
+    </div>
+  </div>
+
+  <!-- KOPIS 공연 상세 모달 -->
+  <div class="modal-overlay" id="kopisDetailModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeKopisDetailModal">&times;</button>
+      <div id="kopisDetailContent"></div>
     </div>
   </div>
 

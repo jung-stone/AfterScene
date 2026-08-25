@@ -1521,6 +1521,110 @@ function setupCommentModal() {
   });
 }
 
+// ===== KOPIS API 연동 =====
+function setupKopisModal() {
+  const openBtn = document.getElementById('kopisSearchBtn');
+  const modal = document.getElementById('kopisModal');
+  const closeBtn = document.getElementById('closeKopisModal');
+  const searchBtn = document.getElementById('kopisSearchSubmitBtn');
+  const searchInput = document.getElementById('kopisSearchInput');
+
+  openBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.classList.add('active');
+    document.getElementById('kopisResultList').innerHTML = `<p class="placeholder-text">공연 제목을 검색해보세요.</p>`;
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.classList.remove('active');
+  });
+
+  searchBtn.addEventListener('click', () => searchKopis());
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchKopis();
+  });
+
+  document.getElementById('closeKopisDetailModal').addEventListener('click', () => {
+    document.getElementById('kopisDetailModal').classList.remove('active');
+  });
+}
+
+async function searchKopis() {
+  const keyword = document.getElementById('kopisSearchInput').value.trim();
+  const listContainer = document.getElementById('kopisResultList');
+  listContainer.innerHTML = `<p class="placeholder-text">검색 중...</p>`;
+
+  try {
+    const response = await fetch(`/api/kopis-list?keyword=${encodeURIComponent(keyword)}`);
+    const data = await response.json();
+
+    if (data.error) {
+      listContainer.innerHTML = `<p class="placeholder-text">오류: ${data.error}</p>`;
+      return;
+    }
+
+    const list = data.list || [];
+
+    if (list.length === 0) {
+      listContainer.innerHTML = `<p class="placeholder-text">검색 결과가 없어요.</p>`;
+      return;
+    }
+
+    listContainer.innerHTML = list.map(item => `
+      <div class="kopis-card" data-id="${item.mt20id}">
+        <img src="${item.poster || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${item.prfnm}" />
+        <div class="kopis-card-title">${item.prfnm}</div>
+        <div class="kopis-card-period">${item.prfpdfrom} ~ ${item.prfpdto}</div>
+        <div class="kopis-card-venue">${item.fcltynm || ''}</div>
+      </div>
+    `).join('');
+
+    listContainer.querySelectorAll('.kopis-card').forEach(card => {
+      card.addEventListener('click', () => {
+        openKopisDetail(card.dataset.id);
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    listContainer.innerHTML = `<p class="placeholder-text">검색 중 오류가 발생했어요.</p>`;
+  }
+}
+
+async function openKopisDetail(id) {
+  const modal = document.getElementById('kopisDetailModal');
+  const content = document.getElementById('kopisDetailContent');
+  content.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+  modal.classList.add('active');
+
+  try {
+    const response = await fetch(`/api/kopis-detail?id=${encodeURIComponent(id)}`);
+    const data = await response.json();
+
+    if (data.error) {
+      content.innerHTML = `<p class="placeholder-text">오류: ${data.error}</p>`;
+      return;
+    }
+
+    const d = data.detail;
+
+    content.innerHTML = `
+      <img class="kopis-detail-poster" src="${d.poster || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${d.prfnm}" />
+      <h2>${d.prfnm}</h2>
+      <div class="kopis-detail-row"><b>기간</b>${d.prfpdfrom} ~ ${d.prfpdto}</div>
+      <div class="kopis-detail-row"><b>장소</b>${d.fcltynm || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>출연</b>${d.prfcast || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>제작진</b>${d.prfcrew || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>런타임</b>${d.prfruntime || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>관람연령</b>${d.prfage || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>제작사</b>${d.entrpsnm || '정보 없음'}</div>
+      <div class="kopis-detail-row"><b>상태</b>${d.prfstate || '정보 없음'}</div>
+    `;
+  } catch (err) {
+    console.error(err);
+    content.innerHTML = `<p class="placeholder-text">상세 정보를 불러오는 중 오류가 발생했어요.</p>`;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
@@ -1534,4 +1638,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVenueModal();
   setupReviewSort();
   setupCommentModal();
+  setupKopisModal();
 });

@@ -1,0 +1,24 @@
+{
+  "name": "afterscene",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jung-stone/afterscene.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jung-stone/afterscene/issues"
+  },
+  "homepage": "https://github.com/jung-stone/afterscene#readme",
+  "dependencies": {
+    "fast-xml-parser": "^5.11.0"
+  }
+}
