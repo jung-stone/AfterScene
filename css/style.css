@@ -7,7 +7,7 @@
 
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
-  background-color: #14161a;   /* 차분한 다크 배경 */
+  background-color: #14161a;
   color: #f5f5f5;
   line-height: 1.5;
 }
@@ -15,6 +15,10 @@ body {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* ===== 헤더 ===== */
@@ -40,7 +44,7 @@ a {
 .logo {
   font-size: 22px;
   font-weight: 800;
-  color: #ff5a5f;   /* 포인트 컬러: 연극 커튼 같은 레드톤 */
+  color: #ff5a5f;
   letter-spacing: -0.5px;
 }
 
@@ -100,6 +104,58 @@ a {
   color: #9ca3af;
 }
 
+/* ===== 장르 필터 ===== */
+.genre-filter {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.genre-btn {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid #2a2e37;
+  background: #1c1f26;
+  color: #d1d5db;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.genre-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.genre-btn.active {
+  background: #ff5a5f;
+  border-color: #ff5a5f;
+  color: white;
+  font-weight: 600;
+}
+
+/* ===== 정렬 선택 ===== */
+.sort-select-row {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sort-select-row select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2e37;
+  background: #1c1f26;
+  color: #f5f5f5;
+  font-size: 13px;
+  outline: none;
+}
+
 /* ===== 연극 섹션 ===== */
 .play-section {
   max-width: 1200px;
@@ -113,21 +169,94 @@ a {
   margin-bottom: 18px;
 }
 
-.play-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 18px;
-}
-
 .placeholder-text {
   color: #6b7280;
   font-size: 14px;
-  grid-column: 1 / -1;
   padding: 20px 0;
 }
 
-/* ===== 연극 카드 (Step 4에서 사용 예정) ===== */
+/* ===== 캐러셀(가로 스크롤) ===== */
+.carousel-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.play-grid {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.play-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.play-grid .play-card {
+  flex: 0 0 auto;
+  width: 160px;
+  scroll-snap-align: start;
+}
+
+.carousel-arrow {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #2a2e37;
+  background: #1c1f26;
+  color: #f5f5f5;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.carousel-arrow:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.carousel-arrow-left {
+  margin-right: 8px;
+}
+
+.carousel-arrow-right {
+  margin-left: 8px;
+}
+
+.load-more-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.load-more-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #2a2e37;
+  background: none;
+  color: #d1d5db;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.load-more-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+/* ===== 연극 카드 ===== */
 .play-card {
+  position: relative;
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -159,6 +288,19 @@ a {
   margin-top: 2px;
 }
 
+.play-period {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.genre-badge {
+  font-size: 11px;
+  color: #ff5a5f;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
 /* ===== 푸터 ===== */
 .footer {
   text-align: center;
@@ -169,153 +311,13 @@ a {
   margin-top: 40px;
 }
 
-/* ===== 반응형 (모바일 전체 보강) ===== */
-@media (max-width: 600px) {
-  /* 헤더 */
-  .header-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .search-box {
-    max-width: 100%;
-    order: 3;
-  }
-
-  .nav-menu {
-    justify-content: space-between;
-    gap: 10px;
-    font-size: 13px;
-  }
-
-  /* 히어로 */
-  .hero {
-    padding: 36px 16px 24px;
-  }
-
-  .hero h1 {
-    font-size: 22px;
-  }
-
-  .hero p {
-    font-size: 13px;
-  }
-
-  /* 연극 카드 그리드 */
-  .play-section {
-    padding: 20px 16px;
-  }
-
-  .play-grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-  }
-
-  .section-title {
-    font-size: 17px;
-  }
-
-  /* 장르 필터 */
-  .genre-filter {
-    padding: 0 16px 10px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .genre-filter::-webkit-scrollbar {
-    display: none;
-  }
-
-  .genre-btn {
-    flex-shrink: 0;
-    padding: 7px 14px;
-    font-size: 12px;
-  }
-
-  /* 모든 모달 공통 */
-  .modal-overlay {
-    align-items: flex-end;
-  }
-
-  .modal-box {
-    width: 100%;
-    max-width: 100%;
-    max-height: 88vh;
-    border-radius: 16px 16px 0 0;
-    padding: 24px 18px;
-    box-sizing: border-box;
-  }
-
-  .mypage-box {
-    max-width: 100%;
-  }
-
-  .modal-box h2 {
-    font-size: 18px;
-    padding-right: 24px; /* 닫기 버튼과 겹치지 않도록 */
-  }
-
-  /* 마이페이지 통계 */
-  .mypage-stats {
-    gap: 10px;
-  }
-
-  .stat-item {
-    padding: 12px 14px;
-  }
-
-  /* 인물 참여작품 카드 */
-  .person-play-card img {
-    width: 38px;
-    height: 57px;
-  }
-
-  /* 크레딧 태그 영역 줄바꿈 여유 */
-  .credit-role-group {
-    line-height: 1.8;
-  }
-
-  /* 좋아요/관리자삭제 버튼 줄바꿈 */
-  .existing-review-card {
-    padding: 12px;
-  }
-
-  .like-btn,
-  .admin-delete-btn {
-    font-size: 11px;
-    padding: 4px 10px;
-  }
-
-  /* 관리자 등록 폼 라벨 여백 축소 */
-  .admin-label {
-    margin-top: 2px;
-  }
-
-  /* 푸터 */
-  .footer {
-    padding: 24px 16px;
-    font-size: 12px;
-  }
+.kopis-credit {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #6b7280;
 }
 
-/* ===== 아주 작은 화면 (구형 소형 폰 등) ===== */
-@media (max-width: 360px) {
-  .play-grid {
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  }
-
-  .logo {
-    font-size: 19px;
-  }
-
-  .nav-menu {
-    font-size: 12px;
-  }
-}
-
-/* ===== 로그인/회원가입 모달 ===== */
+/* ===== 공통 모달 ===== */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -339,6 +341,12 @@ a {
   position: relative;
 }
 
+.mypage-box {
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
 .modal-close {
   position: absolute;
   top: 14px;
@@ -355,7 +363,9 @@ a {
   font-size: 20px;
 }
 
-.modal-box input {
+.modal-box input,
+.modal-box textarea,
+.modal-box select {
   width: 100%;
   padding: 12px 14px;
   margin-bottom: 12px;
@@ -365,9 +375,17 @@ a {
   color: #f5f5f5;
   font-size: 14px;
   outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
-.modal-box input:focus {
+.modal-box textarea {
+  resize: vertical;
+}
+
+.modal-box input:focus,
+.modal-box textarea:focus,
+.modal-box select:focus {
   border-color: #ff5a5f;
 }
 
@@ -407,13 +425,14 @@ a {
   text-align: center;
 }
 
-/* 로그인 상태일 때 헤더 표시용 */
-.user-email-tag {
-  font-size: 13px;
+.admin-label {
+  display: block;
+  font-size: 12px;
   color: #9ca3af;
+  margin-bottom: 4px;
 }
 
-/* ===== 후기 작성 모달 ===== */
+/* ===== 별점 선택 (후기 작성) ===== */
 .rating-picker {
   margin-bottom: 16px;
   text-align: center;
@@ -429,402 +448,6 @@ a {
   font-size: 18px;
   font-weight: 700;
   color: #ff5a5f;
-}
-
-.modal-box textarea {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #2a2e37;
-  background: #22252d;
-  color: #f5f5f5;
-  font-size: 14px;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
-}
-
-.modal-box textarea:focus {
-  border-color: #ff5a5f;
-}
-
-.play-card {
-  cursor: pointer;
-}
-
-/* ===== 마이페이지 ===== */
-.mypage-box {
-  max-width: 480px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.mypage-email {
-  color: #9ca3af;
-  font-size: 13px;
-  margin-bottom: 20px;
-}
-
-.mypage-stats {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-item {
-  background: #22252d;
-  border-radius: 10px;
-  padding: 16px 20px;
-  text-align: center;
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 24px;
-  font-weight: 800;
-  color: #ff5a5f;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 4px;
-}
-
-.mypage-section-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  padding-top: 8px;
-  border-top: 1px solid #2a2e37;
-}
-
-/* ===== 마이페이지 - 타임라인 후기 카드 ===== */
-.my-review-card {
-  display: flex;
-  gap: 14px;
-  background: #22252d;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-  position: relative;
-}
-
-.my-review-poster {
-  width: 64px;
-  height: 96px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  object-fit: cover;
-  background: #14161a;
-}
-
-.my-review-content {
-  flex: 1;
-  min-width: 0;   /* 텍스트 넘칠 때 줄임표 처리 위해 필요 */
-  display: flex;
-  flex-direction: column;
-}
-
-.my-review-date {
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 3px;
-}
-
-.my-review-play-title {
-  font-weight: 700;
-  font-size: 15px;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.my-review-rating {
-  color: #ff5a5f;
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.my-review-one-line {
-  font-size: 13px;
-  color: #d1d5db;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  flex: 1;
-}
-
-.my-review-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.my-review-actions button {
-  background: none;
-  border: 1px solid #2a2e37;
-  color: #9ca3af;
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.my-review-actions button:hover {
-  border-color: #ff5a5f;
-  color: #ff5a5f;
-}
-
-.my-review-actions .delete-btn:hover {
-  background: #ff5a5f;
-  color: white;
-}
-
-/* 모바일: 살짝 더 컴팩트하게 */
-@media (max-width: 600px) {
-  .my-review-poster {
-    width: 54px;
-    height: 81px;
-  }
-
-  .my-review-play-title {
-    font-size: 14px;
-  }
-
-  .my-review-one-line {
-    font-size: 12.5px;
-  }
-}
-
-/* ===== 기존 후기 목록 (리뷰 작성 모달 내) ===== */
-.existing-reviews {
-  max-height: 240px;
-  overflow-y: auto;
-  margin-bottom: 16px;
-}
-
-.existing-review-card {
-  background: #22252d;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-}
-
-.existing-review-card .review-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.existing-review-card .review-rating {
-  color: #ff5a5f;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.existing-review-card .review-date {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.existing-review-card .review-one-line {
-  font-size: 13px;
-  color: #f5f5f5;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.existing-review-card .review-detail {
-  font-size: 12.5px;
-  color: #9ca3af;
-  line-height: 1.5;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* ===== 관리자 등록 모달 ===== */
-.admin-label {
-  display: block;
-  font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 4px;
-}
-
-.modal-box input[type="date"] {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #2a2e37;
-  background: #22252d;
-  color: #f5f5f5;
-  font-size: 14px;
-  outline: none;
-}
-
-#adminAddBtn {
-  color: #ff5a5f;
-  font-weight: 600;
-}
-
-/* ===== 마이페이지 후기 수정/삭제 버튼 ===== */
-.my-review-card {
-  position: relative;
-}
-
-.my-review-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.my-review-actions button {
-  background: none;
-  border: 1px solid #2a2e37;
-  color: #9ca3af;
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.my-review-actions button:hover {
-  border-color: #ff5a5f;
-  color: #ff5a5f;
-}
-
-.my-review-actions .delete-btn:hover {
-  border-color: #ff5a5f;
-  background: #ff5a5f;
-  color: white;
-}
-
-/* ===== 좋아요 버튼 ===== */
-.like-btn {
-  margin-top: 8px;
-  background: none;
-  border: 1px solid #2a2e37;
-  color: #9ca3af;
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.15s;
-}
-
-.like-btn:hover {
-  border-color: #ff5a5f;
-  color: #ff5a5f;
-}
-
-.like-btn.liked {
-  background: #ff5a5f;
-  border-color: #ff5a5f;
-  color: white;
-}
-
-/* ===== 장르 필터 ===== */
-.genre-filter {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px 10px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.genre-btn {
-  padding: 8px 18px;
-  border-radius: 20px;
-  border: 1px solid #2a2e37;
-  background: #1c1f26;
-  color: #d1d5db;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.genre-btn:hover {
-  border-color: #ff5a5f;
-  color: #ff5a5f;
-}
-
-.genre-btn.active {
-  background: #ff5a5f;
-  border-color: #ff5a5f;
-  color: white;
-  font-weight: 600;
-}
-
-.modal-box select {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #2a2e37;
-  background: #22252d;
-  color: #f5f5f5;
-  font-size: 14px;
-  outline: none;
-}
-
-.play-card {
-  position: relative;
-}
-
-.genre-badge {
-  font-size: 11px;
-  color: #ff5a5f;
-  font-weight: 600;
-  margin-top: 6px;
-}
-
-/* ===== 관리자 후기 삭제 버튼 ===== */
-.admin-delete-btn {
-  margin-top: 8px;
-  margin-left: 6px;
-  background: none;
-  border: 1px solid #ff5a5f;
-  color: #ff5a5f;
-  font-size: 11px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-.admin-delete-btn:hover {
-  background: #ff5a5f;
-  color: white;
-}
-
-/* ===== 관리자: 연극 정보 수정 버튼 ===== */
-.admin-edit-play-btn {
-  display: block;
-  margin-bottom: 16px;
-  background: none;
-  border: 1px solid #ff5a5f;
-  color: #ff5a5f;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-.admin-edit-play-btn:hover {
-  background: #ff5a5f;
-  color: white;
 }
 
 /* ===== 공연 정보 박스 (크레딧) ===== */
@@ -848,6 +471,7 @@ a {
 .credit-role-group {
   margin-bottom: 8px;
   font-size: 13px;
+  line-height: 1.8;
 }
 
 .credit-role-label {
@@ -872,46 +496,32 @@ a {
   color: #ff5a5f;
 }
 
-/* ===== 인물 상세 - 참여 작품 목록 ===== */
-.person-play-card {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  background: #22252d;
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 8px;
+.venue-link-btn {
+  background: none;
+  border: none;
+  color: #ff5a5f;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ===== 관리자: 연극 정보 수정 버튼 ===== */
+.admin-edit-play-btn {
+  display: block;
+  margin-bottom: 16px;
+  background: none;
+  border: 1px solid #ff5a5f;
+  color: #ff5a5f;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
   cursor: pointer;
 }
 
-.person-play-card:hover {
-  background: #2a2e37;
-}
-
-.person-play-card img {
-  width: 44px;
-  height: 66px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.person-play-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.person-play-role {
-  font-size: 12px;
-  color: #ff5a5f;
-  margin-top: 2px;
-}
-
-/* ===== 카드 안 공연 기간 표시 ===== */
-.play-period {
-  font-size: 11px;
-  color: #6b7280;
-  margin-top: 2px;
+.admin-edit-play-btn:hover {
+  background: #ff5a5f;
+  color: white;
 }
 
 /* ===== 후기 정렬 버튼 ===== */
@@ -938,9 +548,175 @@ a {
   font-weight: 600;
 }
 
-/* ===== 후기 카드 클릭 가능 표시 ===== */
-.existing-review-card {
+/* ===== 다회차 관람 아코디언 ===== */
+.review-group {
+  margin-bottom: 12px;
+  background: #1c1f26;
+  border: 1px solid #2a2e37;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.review-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
   cursor: pointer;
+}
+
+.review-group-header:hover {
+  background: #22252d;
+}
+
+.review-group-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-group-badge {
+  font-size: 11px;
+  background: #ff5a5f;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.review-group-summary {
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.review-group-toggle {
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.review-group.expanded .review-group-toggle {
+  transform: rotate(180deg);
+}
+
+.review-group-body {
+  display: none;
+  padding: 0 14px 12px;
+}
+
+.review-group.expanded .review-group-body {
+  display: block;
+}
+
+.review-group-preview {
+  padding: 0 14px 12px;
+  cursor: pointer;
+}
+
+.review-group-preview .diff-tag {
+  background: #ff5a5f;
+  color: white;
+}
+
+.review-visit-item {
+  margin-top: 8px;
+}
+
+.review-visit-round {
+  color: #ff5a5f;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.diff-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: #2a2e37;
+  color: #ff5a5f;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  margin-right: 4px;
+}
+
+.seat-tag {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.set-representative-btn {
+  margin-top: 6px;
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.set-representative-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.representative-tag {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ff5a5f;
+  font-weight: 700;
+}
+
+/* ===== 후기 카드 (다른 관람객 후기) ===== */
+.existing-reviews {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.existing-review-card {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.review-rating {
+  color: #ff5a5f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-date {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.review-one-line {
+  font-size: 13px;
+  color: #f5f5f5;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.review-detail {
+  font-size: 12.5px;
+  color: #9ca3af;
+  line-height: 1.5;
 }
 
 .review-card-actions {
@@ -953,6 +729,47 @@ a {
 .comment-count-tag {
   font-size: 12px;
   color: #9ca3af;
+}
+
+/* ===== 좋아요 버튼 ===== */
+.like-btn {
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+
+.like-btn:hover {
+  border-color: #ff5a5f;
+  color: #ff5a5f;
+}
+
+.like-btn.liked {
+  background: #ff5a5f;
+  border-color: #ff5a5f;
+  color: white;
+}
+
+.admin-delete-btn {
+  background: none;
+  border: 1px solid #ff5a5f;
+  color: #ff5a5f;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.admin-delete-btn:hover {
+  background: #ff5a5f;
+  color: white;
 }
 
 /* ===== 댓글 ===== */
@@ -1008,13 +825,7 @@ a {
 
 .comment-input-row input {
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #2a2e37;
-  background: #22252d;
-  color: #f5f5f5;
-  font-size: 13px;
-  outline: none;
+  margin-bottom: 0;
 }
 
 .comment-input-row button {
@@ -1026,6 +837,47 @@ a {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ===== 마이페이지 ===== */
+.mypage-email {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.mypage-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  background: #22252d;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ff5a5f;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.mypage-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2e37;
 }
 
 /* ===== 마이페이지 - 나의 관람 취향 ===== */
@@ -1093,95 +945,90 @@ a {
   flex-shrink: 0;
 }
 
-/* ===== 다회차 관람 아코디언 ===== */
-.review-group {
-  margin-bottom: 12px;
-  background: #1c1f26;
-  border: 1px solid #2a2e37;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.review-group-header {
+/* ===== 마이페이지 - 타임라인 후기 카드 ===== */
+.my-review-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  cursor: pointer;
-}
-
-.review-group-header:hover {
+  gap: 14px;
   background: #22252d;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  position: relative;
 }
 
-.review-group-title {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.review-group-badge {
-  font-size: 11px;
-  background: #ff5a5f;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: 6px;
-}
-
-.review-group-summary {
-  font-size: 12px;
-  color: #9ca3af;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.my-review-poster {
+  width: 64px;
+  height: 96px;
   flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #14161a;
 }
 
-.review-group-toggle {
-  display: inline-block;
-  transition: transform 0.15s;
+.my-review-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.review-group.expanded .review-group-toggle {
-  transform: rotate(180deg);
+.my-review-date {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 3px;
 }
 
-.review-group-body {
-  display: none;
-  padding: 0 14px 12px;
+.my-review-play-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.review-group.expanded .review-group-body {
-  display: block;
+.my-review-rating {
+  color: #ff5a5f;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.review-visit-item {
+.my-review-one-line {
+  font-size: 13px;
+  color: #d1d5db;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.my-review-actions {
+  display: flex;
+  gap: 8px;
   margin-top: 8px;
 }
 
-.review-visit-round {
-  color: #ff5a5f;
-  font-weight: 700;
-  margin-right: 6px;
+.my-review-actions button {
+  background: none;
+  border: 1px solid #2a2e37;
+  color: #9ca3af;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.diff-tag {
-  display: inline-block;
-  font-size: 11px;
-  background: #2a2e37;
+.my-review-actions button:hover {
+  border-color: #ff5a5f;
   color: #ff5a5f;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 10px;
-  margin-bottom: 6px;
-  margin-right: 4px;
 }
 
-.seat-tag {
-  display: block;
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 6px;
+.my-review-actions .delete-btn:hover {
+  background: #ff5a5f;
+  color: white;
 }
 
 /* ===== 인물/극장 아카이브 ===== */
@@ -1197,17 +1044,7 @@ a {
 }
 
 .admin-bio-edit textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #2a2e37;
-  background: #22252d;
-  color: #f5f5f5;
-  font-size: 13px;
-  resize: vertical;
   margin-bottom: 8px;
-  font-family: inherit;
-  box-sizing: border-box;
 }
 
 .admin-bio-edit button {
@@ -1221,54 +1058,196 @@ a {
   cursor: pointer;
 }
 
-.venue-link-btn {
-  background: none;
-  border: none;
-  color: #ff5a5f;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-}
-
-/* ===== 대표 후기 미리보기 ===== */
-.review-group-preview {
-  padding: 0 14px 12px;
+.person-play-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #22252d;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
   cursor: pointer;
 }
 
-.review-group-preview .diff-tag {
-  background: #ff5a5f;
-  color: white;
+.person-play-card:hover {
+  background: #2a2e37;
 }
 
-.set-representative-btn {
-  margin-top: 6px;
-  background: none;
-  border: 1px solid #2a2e37;
-  color: #9ca3af;
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  cursor: pointer;
+.person-play-card img {
+  width: 44px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.set-representative-btn:hover {
-  border-color: #ff5a5f;
+.person-play-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.person-play-role {
+  font-size: 12px;
   color: #ff5a5f;
+  margin-top: 2px;
 }
 
-.representative-tag {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 11px;
-  color: #ff5a5f;
-  font-weight: 700;
+/* ===== 반응형 (모바일 전체 보강) ===== */
+@media (max-width: 600px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-box {
+    max-width: 100%;
+    order: 3;
+  }
+
+  .nav-menu {
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .hero {
+    padding: 36px 16px 24px;
+  }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
+  .hero p {
+    font-size: 13px;
+  }
+
+  .play-section {
+    padding: 20px 16px;
+  }
+
+  .play-grid {
+    gap: 12px;
+  }
+
+  .play-grid .play-card {
+    width: 118px;
+  }
+
+  .carousel-arrow {
+    width: 28px;
+    height: 28px;
+    font-size: 15px;
+  }
+
+  .section-title {
+    font-size: 17px;
+  }
+
+  .genre-filter {
+    padding: 0 16px 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .genre-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  .genre-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  .sort-select-row {
+    padding: 0 16px 14px;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+  }
+
+  .modal-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    border-radius: 16px 16px 0 0;
+    padding: 24px 18px;
+    box-sizing: border-box;
+  }
+
+  .mypage-box {
+    max-width: 100%;
+  }
+
+  .modal-box h2 {
+    font-size: 18px;
+    padding-right: 24px;
+  }
+
+  .mypage-stats {
+    gap: 10px;
+  }
+
+  .stat-item {
+    padding: 12px 14px;
+  }
+
+  .my-review-poster {
+    width: 54px;
+    height: 81px;
+  }
+
+  .my-review-play-title {
+    font-size: 14px;
+  }
+
+  .my-review-one-line {
+    font-size: 12.5px;
+  }
+
+  .person-play-card img {
+    width: 38px;
+    height: 57px;
+  }
+
+  .credit-role-group {
+    line-height: 1.8;
+  }
+
+  .existing-review-card {
+    padding: 12px;
+  }
+
+  .like-btn,
+  .admin-delete-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .admin-label {
+    margin-top: 2px;
+  }
+
+  .footer {
+    padding: 24px 16px;
+    font-size: 12px;
+  }
 }
 
-/* ===== KOPIS 출처 표기 ===== */
-.kopis-credit {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #6b7280;
+@media (max-width: 360px) {
+  .play-grid .play-card {
+    width: 100px;
+  }
+
+  .logo {
+    font-size: 19px;
+  }
+
+  .nav-menu {
+    font-size: 12px;
+  }
 }

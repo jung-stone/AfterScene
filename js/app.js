@@ -11,6 +11,10 @@ let isSignupMode = false;
 let currentGenre = '전체';
 let currentReviewSort = 'latest';
 let currentCommentReviewId = null;
+let currentPlaySort = 'default';
+const PAGE_SIZE = 8;
+const visibleCounts = {};
+const fullLists = {};
 
 // ===== 연극 목록 =====
 async function loadPlays() {
@@ -31,12 +35,18 @@ async function loadPlays() {
 function renderPlays(plays, containerId) {
   const container = document.getElementById(containerId);
 
+  fullLists[containerId] = plays;
+  if (!visibleCounts[containerId]) visibleCounts[containerId] = PAGE_SIZE;
+
   if (!plays || plays.length === 0) {
     container.innerHTML = `<p class="placeholder-text">해당하는 연극이 없습니다.</p>`;
     return;
   }
 
-  container.innerHTML = plays.map(play => {
+  const visibleCount = visibleCounts[containerId];
+  const visiblePlays = plays.slice(0, visibleCount);
+
+  let html = visiblePlays.map(play => {
     let period = '기간 미정';
     if (play.start_date && play.end_date) {
       period = `${play.start_date} ~ ${play.end_date}`;
@@ -55,11 +65,30 @@ function renderPlays(plays, containerId) {
     `;
   }).join('');
 
+  if (plays.length > visibleCount) {
+    const remaining = plays.length - visibleCount;
+    html += `
+      <div class="load-more-wrap">
+        <button class="load-more-btn" data-container="${containerId}">더보기 (${remaining}개 더)</button>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+
   container.querySelectorAll('.play-card').forEach(card => {
     card.addEventListener('click', () => {
       openReviewModal(card.dataset.playId, card.dataset.playTitle);
     });
   });
+
+  const moreBtn = container.querySelector('.load-more-btn');
+  if (moreBtn) {
+    moreBtn.addEventListener('click', () => {
+      visibleCounts[containerId] += PAGE_SIZE;
+      renderPlays(fullLists[containerId], containerId);
+    });
+  }
 }
 
 // ===== 검색 =====
@@ -91,6 +120,7 @@ function setupSearch() {
     endedSection.style.display = 'none';
     ongoingTitleEl.textContent = `🔍 "${e.target.value}" 검색 결과 (${filtered.length}건)`;
 
+    visibleCounts['ongoingPlays'] = PAGE_SIZE;
     renderPlays(filtered, 'ongoingPlays');
   });
 }
@@ -114,7 +144,35 @@ function applyGenreFilter() {
     ? allPlays
     : allPlays.filter(play => play.genre === currentGenre);
 
+  visibleCounts['ongoingPlays'] = PAGE_SIZE;
+  visibleCounts['upcomingPlays'] = PAGE_SIZE;
+  visibleCounts['endedPlays'] = PAGE_SIZE;
+
   categorizeAndRenderPlays(filtered);
+}
+
+// ===== 정렬 =====
+function sortPlays(list) {
+  if (currentPlaySort === 'popular') {
+    return [...list].sort((a, b) =>
+      (b.review_count || 0) - (a.review_count || 0) ||
+      (b.avg_rating || 0) - (a.avg_rating || 0)
+    );
+  }
+
+  // 기본: 공연임박순 (시작일 빠른 순, 날짜 없는 항목은 맨 뒤)
+  return [...list].sort((a, b) => {
+    if (!a.start_date) return 1;
+    if (!b.start_date) return -1;
+    return a.start_date.localeCompare(b.start_date);
+  });
+}
+
+function setupPlaySort() {
+  document.getElementById('playSortSelect').addEventListener('change', (e) => {
+    currentPlaySort = e.target.value;
+    applyGenreFilter();
+  });
 }
 
 // 공연 기간을 기준으로 공연중/공연예정/공연종료로 자동 분류
@@ -140,20 +198,22 @@ function categorizeAndRenderPlays(plays) {
     }
   });
 
-  // 첫 공연 날짜가 빠른 순서대로 정렬 (날짜 없는 항목은 맨 뒤로)
-  const sortByStartDate = (a, b) => {
-    if (!a.start_date) return 1;
-    if (!b.start_date) return -1;
-    return a.start_date.localeCompare(b.start_date);
-  };
+  renderPlays(sortPlays(ongoing), 'ongoingPlays');
+  renderPlays(sortPlays(upcoming), 'upcomingPlays');
+  renderPlays(sortPlays(ended), 'endedPlays');
+}
 
-  ongoing.sort(sortByStartDate);
-  upcoming.sort(sortByStartDate);
-  ended.sort(sortByStartDate);
-
-  renderPlays(ongoing, 'ongoingPlays');
-  renderPlays(upcoming, 'upcomingPlays');
-  renderPlays(ended, 'endedPlays');
+// ===== 캐러셀 화살표 =====
+function setupCarouselArrows() {
+  document.querySelectorAll('.carousel-arrow').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const scrollAmount = target.clientWidth * 0.8;
+      const direction = btn.classList.contains('carousel-arrow-left') ? -1 : 1;
+      target.scrollBy({ left: scrollAmount * direction, behavior: 'smooth' });
+    });
+  });
 }
 
 // ===== 로그인 / 회원가입 =====
@@ -659,7 +719,6 @@ async function loadPlayReviews(playId) {
     isCurrentUserAdmin = !!(myProfile && myProfile.is_admin);
   }
 
-  // 사용자별로 그룹핑
   const groups = {};
   reviews.forEach(r => {
     if (!groups[r.user_id]) groups[r.user_id] = [];
@@ -676,7 +735,6 @@ async function loadPlayReviews(playId) {
     const latestCreated = list.reduce((max, r) => (r.created_at > max ? r.created_at : max), list[0].created_at);
     const avgRating = list.reduce((s, r) => s + r.rating, 0) / list.length;
 
-    // 대표 후기: 본인이 지정한 게 있으면 그걸, 없으면 가장 최근 관람(sortedVisits 마지막)
     const representative = sortedVisits.find(v => v.is_representative) || sortedVisits[sortedVisits.length - 1];
 
     return { userId: uid, visits: sortedVisits, count: list.length, totalLikes, latestCreated, avgRating, representative };
@@ -740,7 +798,6 @@ async function loadPlayReviews(playId) {
     if (group.count >= 7) badge = '🎡 회전문의 신';
     else if (group.count >= 4) badge = '🎯 단골';
 
-    // 대표 후기 미리보기 (항상 보임, 클릭하면 펼쳐짐)
     const rep = group.representative;
     const repDate = rep.watched_date || new Date(rep.created_at).toLocaleDateString('ko-KR');
     const repIsRepTag = group.visits.some(v => v.is_representative)
@@ -850,7 +907,6 @@ async function loadPlayReviews(playId) {
   });
 }
 
-// 대표 후기 지정 (같은 사용자+같은 연극 안에서 하나만 true가 되도록)
 async function setRepresentativeReview(reviewId, userId, playId) {
   await supabaseClient
     .from('reviews')
@@ -1531,6 +1587,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
   setupGenreFilter();
+  setupPlaySort();
+  setupCarouselArrows();
   setupAuthModal();
   updateAuthUI();
   setupReviewModal();

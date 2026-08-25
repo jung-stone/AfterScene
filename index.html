@@ -27,7 +27,7 @@
 
   <!-- 메인 콘텐츠 -->
   <main class="main-content">
-    <section class="hero">      
+    <section class="hero">
       <h1>Stage Ends. Memories Stay.</h1>
       <p>당신이 본 연극, 그 감동을 기록해보세요.</p>
     </section>
@@ -40,33 +40,53 @@
       <button class="genre-btn" data-genre="기타">기타</button>
     </div>
 
+    <div class="sort-select-row">
+      <select id="playSortSelect">
+        <option value="default">공연임박순</option>
+        <option value="popular">인기순</option>
+      </select>
+    </div>
+
     <section class="play-section">
       <h2 class="section-title">🎭 공연중</h2>
-      <div class="play-grid" id="ongoingPlays">
-        <p class="placeholder-text">불러오는 중...</p>
+      <div class="carousel-wrap">
+        <button class="carousel-arrow carousel-arrow-left" data-target="ongoingPlays">‹</button>
+        <div class="play-grid" id="ongoingPlays">
+          <p class="placeholder-text">불러오는 중...</p>
+        </div>
+        <button class="carousel-arrow carousel-arrow-right" data-target="ongoingPlays">›</button>
       </div>
     </section>
 
     <section class="play-section">
       <h2 class="section-title">🔜 공연예정</h2>
-      <div class="play-grid" id="upcomingPlays">
-        <p class="placeholder-text">불러오는 중...</p>
+      <div class="carousel-wrap">
+        <button class="carousel-arrow carousel-arrow-left" data-target="upcomingPlays">‹</button>
+        <div class="play-grid" id="upcomingPlays">
+          <p class="placeholder-text">불러오는 중...</p>
+        </div>
+        <button class="carousel-arrow carousel-arrow-right" data-target="upcomingPlays">›</button>
       </div>
     </section>
 
     <section class="play-section">
       <h2 class="section-title">🔚 공연종료</h2>
-      <div class="play-grid" id="endedPlays">
-        <p class="placeholder-text">불러오는 중...</p>
+      <div class="carousel-wrap">
+        <button class="carousel-arrow carousel-arrow-left" data-target="endedPlays">‹</button>
+        <div class="play-grid" id="endedPlays">
+          <p class="placeholder-text">불러오는 중...</p>
+        </div>
+        <button class="carousel-arrow carousel-arrow-right" data-target="endedPlays">›</button>
       </div>
     </section>
+  </main>
 
-    <!-- 로그인/회원가입 모달 -->
+  <!-- 로그인/회원가입 모달 -->
   <div class="modal-overlay" id="authModal">
     <div class="modal-box">
       <button class="modal-close" id="closeModal">&times;</button>
       <h2 id="modalTitle">로그인</h2>
-      
+
       <input type="text" id="authNickname" placeholder="닉네임 (2~12자)" class="hidden" maxlength="12" />
       <input type="email" id="authEmail" placeholder="이메일" />
       <input type="password" id="authPassword" placeholder="비밀번호 (6자 이상)" />
@@ -80,7 +100,7 @@
       <p class="modal-error" id="authError"></p>
     </div>
   </div>
-  
+
   <!-- 후기 작성 모달 -->
   <div class="modal-overlay" id="reviewModal">
     <div class="modal-box mypage-box">
@@ -105,6 +125,7 @@
       <textarea id="detailInput" placeholder="상세 후기를 자유롭게 작성해주세요" rows="5"></textarea>
 
       <button class="modal-submit-btn" id="reviewSubmitBtn">후기 등록하기</button>
+
       <h3 class="mypage-section-title">📝 다른 관람객들의 후기</h3>
       <div class="review-sort-buttons" id="reviewSortButtons">
         <button class="sort-btn active" data-sort="latest">최신순</button>
@@ -115,6 +136,23 @@
       </div>
 
       <p class="modal-error" id="reviewError"></p>
+    </div>
+  </div>
+
+  <!-- 후기 댓글 모달 -->
+  <div class="modal-overlay" id="commentModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeCommentModal">&times;</button>
+      <div id="commentReviewDetail"></div>
+
+      <h3 class="mypage-section-title">댓글</h3>
+      <div class="comment-list" id="commentList"></div>
+
+      <div class="comment-input-row">
+        <input type="text" id="commentInput" placeholder="댓글을 입력하세요" maxlength="200" />
+        <button id="commentSubmitBtn">등록</button>
+      </div>
+      <p class="modal-error" id="commentError"></p>
     </div>
   </div>
 
@@ -131,6 +169,7 @@
           <div class="stat-label">작성한 후기</div>
         </div>
       </div>
+
       <div class="taste-stats" id="tasteStats">
         <p class="placeholder-text">불러오는 중...</p>
       </div>
@@ -142,15 +181,16 @@
     </div>
   </div>
 
-    <!-- 관리자: 연극 등록 모달 -->
+  <!-- 관리자: 연극 등록/수정 모달 -->
   <div class="modal-overlay" id="adminModal">
-    <div class="modal-box">
+    <div class="modal-box mypage-box">
       <button class="modal-close" id="closeAdminModal">&times;</button>
       <h2>새 연극 등록</h2>
 
       <input type="text" id="adminTitle" placeholder="연극 제목" />
       <input type="text" id="adminPoster" placeholder="포스터 이미지 URL" />
       <input type="text" id="adminVenue" placeholder="공연 장소" />
+
       <label class="admin-label">장르</label>
       <select id="adminGenre">
         <option value="연극">연극</option>
@@ -158,6 +198,13 @@
         <option value="코미디">코미디</option>
         <option value="기타">기타</option>
       </select>
+
+      <textarea id="adminDescription" placeholder="연극 소개" rows="3"></textarea>
+
+      <label class="admin-label">공연 시작일</label>
+      <input type="date" id="adminStartDate" />
+      <label class="admin-label">공연 종료일</label>
+      <input type="date" id="adminEndDate" />
 
       <label class="admin-label">작 (쉼표로 구분)</label>
       <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
@@ -175,11 +222,6 @@
       <input type="text" id="adminHost" placeholder="예: OO문화재단" />
       <label class="admin-label">주관 (쉼표로 구분)</label>
       <input type="text" id="adminSupervisor" placeholder="예: OO컴퍼니" />
-      <textarea id="adminDescription" placeholder="연극 소개" rows="3"></textarea>
-      <label class="admin-label">공연 시작일</label>
-      <input type="date" id="adminStartDate" />
-      <label class="admin-label">공연 종료일</label>
-      <input type="date" id="adminEndDate" />
 
       <button class="modal-submit-btn" id="adminSubmitBtn">등록하기</button>
       <p class="modal-error" id="adminError"></p>
@@ -204,7 +246,7 @@
     </div>
   </div>
 
-    <!-- 극장 상세 모달 -->
+  <!-- 극장 상세 모달 -->
   <div class="modal-overlay" id="venueModal">
     <div class="modal-box mypage-box">
       <button class="modal-close" id="closeVenueModal">&times;</button>
@@ -219,23 +261,6 @@
 
       <h3 class="mypage-section-title">공연된 작품</h3>
       <div class="person-play-list" id="venuePlayList"></div>
-    </div>
-  </div>
-
-    <!-- 후기 댓글 모달 -->
-  <div class="modal-overlay" id="commentModal">
-    <div class="modal-box mypage-box">
-      <button class="modal-close" id="closeCommentModal">&times;</button>
-      <div id="commentReviewDetail"></div>
-
-      <h3 class="mypage-section-title">댓글</h3>
-      <div class="comment-list" id="commentList"></div>
-
-      <div class="comment-input-row">
-        <input type="text" id="commentInput" placeholder="댓글을 입력하세요" maxlength="200" />
-        <button id="commentSubmitBtn">등록</button>
-      </div>
-      <p class="modal-error" id="commentError"></p>
     </div>
   </div>
 
