@@ -19,6 +19,10 @@
   },
   "homepage": "https://github.com/jung-stone/afterscene#readme",
   "dependencies": {
-    "fast-xml-parser": "^5.11.0"
+    "@supabase/supabase-js": "^2.112.4",
+    "csv-parse": "^7.0.2",
+    "dotenv": "^17.4.2",
+    "fast-xml-parser": "^5.11.0",
+    "xlsx": "^0.18.5"
   }
 }

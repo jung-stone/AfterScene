@@ -19,7 +19,6 @@
 
       <nav class="nav-menu">
         <a href="#" id="adminAddBtn" class="hidden">+ 연극 등록</a>
-        <a href="#" id="kopisSearchBtn">🔍 KOPIS 검색</a>
         <a href="#" id="myPageBtn">마이페이지</a>
         <a href="#" id="loginBtn">로그인</a>
       </nav>
@@ -160,16 +159,22 @@
         <option value="기타">기타</option>
       </select>
 
+      <label class="admin-label">작 (쉼표로 구분)</label>
+      <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
       <label class="admin-label">연출 (쉼표로 구분)</label>
       <input type="text" id="adminDirector" placeholder="예: 박연출" />
-      <label class="admin-label">원작자 (쉼표로 구분)</label>
-      <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
+      <label class="admin-label">각색 (쉼표로 구분)</label>
+      <input type="text" id="adminAdaptation" placeholder="예: 김각색" />
       <label class="admin-label">출연진 (쉼표로 구분)</label>
       <input type="text" id="adminCast" placeholder="예: 홍길동, 김철수" />
-      <label class="admin-label">제작진 (쉼표로 구분)</label>
-      <input type="text" id="adminStaff" placeholder="예: 무대감독 이몽룡" />
-      <label class="admin-label">기획, 제작 (쉼표로 구분)</label>
-      <input type="text" id="adminProducer" placeholder="예: OO컴퍼니" />
+      <label class="admin-label">기획 (쉼표로 구분)</label>
+      <input type="text" id="adminPlan" placeholder="예: OO컴퍼니" />
+      <label class="admin-label">제작 (쉼표로 구분)</label>
+      <input type="text" id="adminProduction" placeholder="예: OO컴퍼니" />
+      <label class="admin-label">주최 (쉼표로 구분)</label>
+      <input type="text" id="adminHost" placeholder="예: OO문화재단" />
+      <label class="admin-label">주관 (쉼표로 구분)</label>
+      <input type="text" id="adminSupervisor" placeholder="예: OO컴퍼니" />
       <textarea id="adminDescription" placeholder="연극 소개" rows="3"></textarea>
       <label class="admin-label">공연 시작일</label>
       <input type="date" id="adminStartDate" />
@@ -234,29 +239,9 @@
     </div>
   </div>
 
-  <!-- KOPIS 공연 검색 모달 -->
-  <div class="modal-overlay" id="kopisModal">
-    <div class="modal-box mypage-box">
-      <button class="modal-close" id="closeKopisModal">&times;</button>
-      <h2>KOPIS 공연 검색</h2>
-
-      <input type="text" id="kopisSearchInput" placeholder="공연 제목으로 검색" />
-      <button class="modal-submit-btn" id="kopisSearchSubmitBtn">검색</button>
-
-      <div class="kopis-result-list" id="kopisResultList"></div>
-    </div>
-  </div>
-
-  <!-- KOPIS 공연 상세 모달 -->
-  <div class="modal-overlay" id="kopisDetailModal">
-    <div class="modal-box mypage-box">
-      <button class="modal-close" id="closeKopisDetailModal">&times;</button>
-      <div id="kopisDetailContent"></div>
-    </div>
-  </div>
-
   <footer class="footer">
     <p>&copy; 2026 AfterScene. All rights reserved.</p>
+    <p class="kopis-credit">본 서비스는 공연예술통합전산망(KOPIS)이 제공하는 공연정보를 활용하였습니다.</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

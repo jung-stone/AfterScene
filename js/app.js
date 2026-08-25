@@ -321,11 +321,14 @@ function setupReviewModal() {
       grouped[c.role].push(c.people.name);
     });
 
+    document.getElementById('adminWriter').value = (grouped['작'] || []).join(', ');
     document.getElementById('adminDirector').value = (grouped['연출'] || []).join(', ');
-    document.getElementById('adminWriter').value = (grouped['원작자'] || []).join(', ');
+    document.getElementById('adminAdaptation').value = (grouped['각색'] || []).join(', ');
     document.getElementById('adminCast').value = (grouped['출연진'] || []).join(', ');
-    document.getElementById('adminStaff').value = (grouped['제작진'] || []).join(', ');
-    document.getElementById('adminProducer').value = (grouped['기획제작'] || []).join(', ');
+    document.getElementById('adminPlan').value = (grouped['기획'] || []).join(', ');
+    document.getElementById('adminProduction').value = (grouped['제작'] || []).join(', ');
+    document.getElementById('adminHost').value = (grouped['주최'] || []).join(', ');
+    document.getElementById('adminSupervisor').value = (grouped['주관'] || []).join(', ');
 
     document.getElementById('reviewModal').classList.remove('active');
     document.getElementById('adminModal').classList.add('active');
@@ -449,7 +452,7 @@ async function loadPlayInfo(playId) {
     .select('role, people(id, name)')
     .eq('play_id', playId);
 
-  const roleOrder = ['연출', '원작자', '출연진', '제작진', '기획제작'];
+  const roleOrder = ['작', '연출', '각색', '출연진', '기획', '제작', '주최', '주관'];
   const grouped = {};
   (credits || []).forEach(c => {
     if (!c.people) return;
@@ -1038,12 +1041,10 @@ async function loadMyStats(userId) {
     return;
   }
 
-  // 평균 별점
   const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
 
   const playIds = [...new Set(reviews.map(r => r.play_id))];
 
-  // 극장 정보
   const { data: plays } = await supabaseClient
     .from('plays')
     .select('id, venue')
@@ -1058,28 +1059,27 @@ async function loadMyStats(userId) {
     venueCount[venue] = (venueCount[venue] || 0) + 1;
   });
 
-  // 출연진 / 제작진 정보
   const { data: credits } = await supabaseClient
     .from('play_credits')
     .select('play_id, role, people(name)')
     .in('play_id', playIds)
-    .in('role', ['출연진', '제작진']);
+    .in('role', ['출연진', '연출']);
 
   const creditsByPlay = {};
   (credits || []).forEach(c => {
     if (!c.people) return;
-    if (!creditsByPlay[c.play_id]) creditsByPlay[c.play_id] = { 출연진: [], 제작진: [] };
+    if (!creditsByPlay[c.play_id]) creditsByPlay[c.play_id] = { '출연진': [], '연출': [] };
     creditsByPlay[c.play_id][c.role].push(c.people.name);
   });
 
   const actorCount = {};
-  const staffCount = {};
+  const directorCount = {};
 
   reviews.forEach(r => {
     const info = creditsByPlay[r.play_id];
     if (!info) return;
     info['출연진'].forEach(name => { actorCount[name] = (actorCount[name] || 0) + 1; });
-    info['제작진'].forEach(name => { staffCount[name] = (staffCount[name] || 0) + 1; });
+    info['연출'].forEach(name => { directorCount[name] = (directorCount[name] || 0) + 1; });
   });
 
   const toRankList = (countMap, limit = 3) => {
@@ -1115,7 +1115,7 @@ async function loadMyStats(userId) {
   `;
 
   html += renderRankGroup('🎭 자주 본 배우', toRankList(actorCount), '회');
-  html += renderRankGroup('🎬 자주 본 제작진', toRankList(staffCount), '회');
+  html += renderRankGroup('🎬 자주 본 연출', toRankList(directorCount), '회');
   html += renderRankGroup('📍 자주 간 극장', toRankList(venueCount), '회');
 
   box.innerHTML = html;
@@ -1263,11 +1263,14 @@ function setupVenueModal() {
 
 async function saveCredits(playId) {
   const roleFields = {
+    '작': 'adminWriter',
     '연출': 'adminDirector',
-    '원작자': 'adminWriter',
+    '각색': 'adminAdaptation',
     '출연진': 'adminCast',
-    '제작진': 'adminStaff',
-    '기획제작': 'adminProducer'
+    '기획': 'adminPlan',
+    '제작': 'adminProduction',
+    '주최': 'adminHost',
+    '주관': 'adminSupervisor'
   };
 
   await supabaseClient.from('play_credits').delete().eq('play_id', playId);
@@ -1307,11 +1310,14 @@ function setupAdminModal() {
     document.getElementById('adminDescription').value = '';
     document.getElementById('adminStartDate').value = '';
     document.getElementById('adminEndDate').value = '';
-    document.getElementById('adminDirector').value = '';
     document.getElementById('adminWriter').value = '';
+    document.getElementById('adminDirector').value = '';
+    document.getElementById('adminAdaptation').value = '';
     document.getElementById('adminCast').value = '';
-    document.getElementById('adminStaff').value = '';
-    document.getElementById('adminProducer').value = '';
+    document.getElementById('adminPlan').value = '';
+    document.getElementById('adminProduction').value = '';
+    document.getElementById('adminHost').value = '';
+    document.getElementById('adminSupervisor').value = '';
     modal.classList.add('active');
   });
 
@@ -1521,110 +1527,6 @@ function setupCommentModal() {
   });
 }
 
-// ===== KOPIS API 연동 =====
-function setupKopisModal() {
-  const openBtn = document.getElementById('kopisSearchBtn');
-  const modal = document.getElementById('kopisModal');
-  const closeBtn = document.getElementById('closeKopisModal');
-  const searchBtn = document.getElementById('kopisSearchSubmitBtn');
-  const searchInput = document.getElementById('kopisSearchInput');
-
-  openBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    modal.classList.add('active');
-    document.getElementById('kopisResultList').innerHTML = `<p class="placeholder-text">공연 제목을 검색해보세요.</p>`;
-  });
-
-  closeBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-  });
-
-  searchBtn.addEventListener('click', () => searchKopis());
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') searchKopis();
-  });
-
-  document.getElementById('closeKopisDetailModal').addEventListener('click', () => {
-    document.getElementById('kopisDetailModal').classList.remove('active');
-  });
-}
-
-async function searchKopis() {
-  const keyword = document.getElementById('kopisSearchInput').value.trim();
-  const listContainer = document.getElementById('kopisResultList');
-  listContainer.innerHTML = `<p class="placeholder-text">검색 중...</p>`;
-
-  try {
-    const response = await fetch(`/api/kopis-list?keyword=${encodeURIComponent(keyword)}`);
-    const data = await response.json();
-
-    if (data.error) {
-      listContainer.innerHTML = `<p class="placeholder-text">오류: ${data.error}</p>`;
-      return;
-    }
-
-    const list = data.list || [];
-
-    if (list.length === 0) {
-      listContainer.innerHTML = `<p class="placeholder-text">검색 결과가 없어요.</p>`;
-      return;
-    }
-
-    listContainer.innerHTML = list.map(item => `
-      <div class="kopis-card" data-id="${item.mt20id}">
-        <img src="${item.poster || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${item.prfnm}" />
-        <div class="kopis-card-title">${item.prfnm}</div>
-        <div class="kopis-card-period">${item.prfpdfrom} ~ ${item.prfpdto}</div>
-        <div class="kopis-card-venue">${item.fcltynm || ''}</div>
-      </div>
-    `).join('');
-
-    listContainer.querySelectorAll('.kopis-card').forEach(card => {
-      card.addEventListener('click', () => {
-        openKopisDetail(card.dataset.id);
-      });
-    });
-  } catch (err) {
-    console.error(err);
-    listContainer.innerHTML = `<p class="placeholder-text">검색 중 오류가 발생했어요.</p>`;
-  }
-}
-
-async function openKopisDetail(id) {
-  const modal = document.getElementById('kopisDetailModal');
-  const content = document.getElementById('kopisDetailContent');
-  content.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
-  modal.classList.add('active');
-
-  try {
-    const response = await fetch(`/api/kopis-detail?id=${encodeURIComponent(id)}`);
-    const data = await response.json();
-
-    if (data.error) {
-      content.innerHTML = `<p class="placeholder-text">오류: ${data.error}</p>`;
-      return;
-    }
-
-    const d = data.detail;
-
-    content.innerHTML = `
-      <img class="kopis-detail-poster" src="${d.poster || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image'}" alt="${d.prfnm}" />
-      <h2>${d.prfnm}</h2>
-      <div class="kopis-detail-row"><b>기간</b>${d.prfpdfrom} ~ ${d.prfpdto}</div>
-      <div class="kopis-detail-row"><b>장소</b>${d.fcltynm || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>출연</b>${d.prfcast || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>제작진</b>${d.prfcrew || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>런타임</b>${d.prfruntime || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>관람연령</b>${d.prfage || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>제작사</b>${d.entrpsnm || '정보 없음'}</div>
-      <div class="kopis-detail-row"><b>상태</b>${d.prfstate || '정보 없음'}</div>
-    `;
-  } catch (err) {
-    console.error(err);
-    content.innerHTML = `<p class="placeholder-text">상세 정보를 불러오는 중 오류가 발생했어요.</p>`;
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
@@ -1638,5 +1540,4 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVenueModal();
   setupReviewSort();
   setupCommentModal();
-  setupKopisModal();
 });
