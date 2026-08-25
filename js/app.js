@@ -125,32 +125,6 @@ function setupSearch() {
   });
 }
 
-// ===== 장르 필터 =====
-function setupGenreFilter() {
-  const buttons = document.querySelectorAll('.genre-btn');
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentGenre = btn.dataset.genre;
-      applyGenreFilter();
-    });
-  });
-}
-
-function applyGenreFilter() {
-  const filtered = currentGenre === '전체'
-    ? allPlays
-    : allPlays.filter(play => play.genre === currentGenre);
-
-  visibleCounts['ongoingPlays'] = PAGE_SIZE;
-  visibleCounts['upcomingPlays'] = PAGE_SIZE;
-  visibleCounts['endedPlays'] = PAGE_SIZE;
-
-  categorizeAndRenderPlays(filtered);
-}
-
 // ===== 정렬 =====
 function sortPlays(list) {
   if (currentPlaySort === 'popular') {
@@ -1586,7 +1560,6 @@ function setupCommentModal() {
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
-  setupGenreFilter();
   setupPlaySort();
   setupCarouselArrows();
   setupAuthModal();
