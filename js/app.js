@@ -149,6 +149,14 @@ function setupPlaySort() {
   });
 }
 
+function applyGenreFilter() {
+  visibleCounts['ongoingPlays'] = PAGE_SIZE;
+  visibleCounts['upcomingPlays'] = PAGE_SIZE;
+  visibleCounts['endedPlays'] = PAGE_SIZE;
+
+  categorizeAndRenderPlays(allPlays);
+}
+
 // 공연 기간을 기준으로 공연중/공연예정/공연종료로 자동 분류
 function categorizeAndRenderPlays(plays) {
   const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD' 형식
