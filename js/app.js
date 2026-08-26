@@ -18,17 +18,32 @@ const fullLists = {};
 
 // ===== 연극 목록 =====
 async function loadPlays() {
-  const { data, error } = await supabaseClient
-    .from('plays')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let allData = [];
+  let from = 0;
+  const batchSize = 1000;
 
-  if (error) {
-    console.error('연극 목록을 불러오는 중 오류 발생:', error);
-    return;
+  while (true) {
+    const { data, error } = await supabaseClient
+      .from('plays')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (error) {
+      console.error('연극 목록을 불러오는 중 오류 발생:', error);
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+
+    allData = allData.concat(data);
+
+    if (data.length < batchSize) break; // 마지막 배치였다면 반복 종료
+
+    from += batchSize;
   }
 
-  allPlays = data;
+  allPlays = allData;
   applyGenreFilter();
 }
 
@@ -120,7 +135,7 @@ function setupSearch() {
     endedSection.style.display = 'none';
     ongoingTitleEl.textContent = `🔍 "${e.target.value}" 검색 결과 (${filtered.length}건)`;
 
-    visibleCounts['ongoingPlays'] = PAGE_SIZE;
+    visibleCounts['ongoingPlays'] = filtered.length || PAGE_SIZE;
     renderPlays(filtered, 'ongoingPlays');
   });
 }
