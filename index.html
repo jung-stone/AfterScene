@@ -34,8 +34,8 @@
 
     <div class="sort-select-row">
       <select id="playSortSelect">
+        <option value="popular" selected>인기순</option>
         <option value="default">공연임박순</option>
-        <option value="popular">인기순</option>
       </select>
     </div>
 
@@ -100,16 +100,21 @@
       <h2 id="reviewPlayTitle">연극 제목</h2>
       <button class="admin-edit-play-btn hidden" id="adminEditPlayBtn">✏️ 연극 정보 수정</button>
       <div class="play-info-box" id="playInfoBox"></div>
-
+      <button type="button" class="admin-edit-play-btn hidden" id="viewCastScheduleBtn">🗓 캐스팅 일정 보기</button>
       <div class="rating-picker">
         <input type="range" id="ratingInput" min="0.5" max="5" step="0.5" value="3.5" />
         <div class="rating-display">⭐ <span id="ratingValue">3.5</span> / 5.0</div>
       </div>
 
-      <label class="admin-label">관람 날짜</label>
-      <input type="date" id="watchedDateInput" />
-      <label class="admin-label">관람 캐스팅 (선택, 배우 이름)</label>
-      <input type="text" id="watchedCastInput" placeholder="예: 홍길동 (더블캐스팅 작품일 때만)" />
+      <label class="admin-label">관람 회차</label>
+      <div id="roundSelectBox" class="round-select-box hidden"></div>
+
+      <div id="manualDateTimeBox">
+        <label class="admin-label">관람 날짜</label>
+        <input type="date" id="watchedDateInput" />
+        <label class="admin-label">관람 시간 (선택)</label>
+        <input type="text" id="watchedTimeInput" placeholder="예: 14:00 또는 19:30" />
+      </div>
       <label class="admin-label">좌석 (선택)</label>
       <input type="text" id="seatInput" placeholder="예: 1층 A구역 5열 12번" />
 
@@ -214,8 +219,9 @@
       <input type="text" id="adminHost" placeholder="예: OO문화재단" />
       <label class="admin-label">주관 (쉼표로 구분)</label>
       <input type="text" id="adminSupervisor" placeholder="예: OO컴퍼니" />
-
+      <button type="button" class="admin-edit-play-btn" id="openCastScheduleBtn">🗓 회차별 캐스팅 일정 관리</button>
       <button class="modal-submit-btn" id="adminSubmitBtn">등록하기</button>
+      <button type="button" class="admin-delete-play-btn hidden" id="adminDeletePlayBtn">🗑 이 연극 삭제하기</button>
       <p class="modal-error" id="adminError"></p>
     </div>
   </div>
@@ -253,6 +259,33 @@
 
       <h3 class="mypage-section-title">공연된 작품</h3>
       <div class="person-play-list" id="venuePlayList"></div>
+    </div>
+  </div>
+
+  <!-- 관리자: 회차별 캐스팅 일정 모달 -->
+  <div class="modal-overlay" id="castScheduleModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeCastScheduleModal">&times;</button>
+      <h2>회차별 캐스팅 일정</h2>
+
+      <div class="cast-schedule-form">
+        <input type="date" id="scheduleDateInput" />
+        <input type="text" id="scheduleTimeInput" placeholder="시간 (예: 19:00)" />
+        <select id="scheduleActorSelect"></select>
+        <button id="scheduleAddBtn">추가</button>
+      </div>
+
+      <div id="castScheduleList"></div>
+      <p class="modal-error" id="castScheduleError"></p>
+    </div>
+  </div>
+
+  <!-- 캐스팅 일정 조회 모달 (누구나 볼 수 있음) -->
+  <div class="modal-overlay" id="viewCastScheduleModal">
+    <div class="modal-box mypage-box">
+      <button class="modal-close" id="closeViewCastScheduleModal">&times;</button>
+      <h2>캐스팅 일정</h2>
+      <div id="viewCastScheduleList"></div>
     </div>
   </div>
 

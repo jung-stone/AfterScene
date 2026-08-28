@@ -11,7 +11,7 @@ let isSignupMode = false;
 let currentGenre = '전체';
 let currentReviewSort = 'latest';
 let currentCommentReviewId = null;
-let currentPlaySort = 'default';
+let currentPlaySort = 'popular';
 const PAGE_SIZE = 8;
 const visibleCounts = {};
 const fullLists = {};
@@ -365,6 +365,7 @@ function setupReviewModal() {
     document.getElementById('adminStartDate').value = play.start_date || '';
     document.getElementById('adminEndDate').value = play.end_date || '';
     document.getElementById('adminSubmitBtn').textContent = '수정 완료';
+    document.getElementById('adminDeletePlayBtn').classList.remove('hidden');
 
     const { data: credits } = await supabaseClient
       .from('play_credits')
@@ -402,7 +403,7 @@ function setupReviewModal() {
 
     const rating = parseFloat(ratingInput.value);
     const watchedDate = document.getElementById('watchedDateInput').value || null;
-    const watchedCast = document.getElementById('watchedCastInput').value.trim() || null;
+    const watchedTime = document.getElementById('watchedTimeInput').value.trim() || null;
     const seatInfo = document.getElementById('seatInput').value.trim() || null;
     const oneLine = document.getElementById('oneLineInput').value.trim();
     const detail = document.getElementById('detailInput').value.trim();
@@ -418,7 +419,7 @@ function setupReviewModal() {
         .update({
           rating,
           watched_date: watchedDate,
-          watched_cast: watchedCast,
+          watched_time: watchedTime,
           seat_info: seatInfo,
           one_line_review: oneLine,
           detail_review: detail
@@ -438,7 +439,7 @@ function setupReviewModal() {
         user_id: user.id,
         rating: rating,
         watched_date: watchedDate,
-        watched_cast: watchedCast,
+        watched_time: watchedTime,
         seat_info: seatInfo,
         one_line_review: oneLine,
         detail_review: detail
@@ -470,7 +471,7 @@ async function openReviewModal(playId, playTitle, editData = null) {
   document.getElementById('ratingInput').value = editData ? editData.rating : 3.5;
   document.getElementById('ratingValue').textContent = editData ? editData.rating : 3.5;
   document.getElementById('watchedDateInput').value = editData ? (editData.watchedDate || '') : '';
-  document.getElementById('watchedCastInput').value = editData ? (editData.watchedCast || '') : '';
+  document.getElementById('watchedTimeInput').value = editData ? (editData.watchedTime || '') : '';
   document.getElementById('seatInput').value = editData ? (editData.seatInfo || '') : '';
   document.getElementById('oneLineInput').value = editData ? editData.oneLine : '';
   document.getElementById('detailInput').value = editData ? editData.detail : '';
@@ -480,6 +481,7 @@ async function openReviewModal(playId, playTitle, editData = null) {
 
   loadPlayInfo(playId);
   loadPlayReviews(playId);
+  await loadRoundOptions(playId, editData);
 
   const editPlayBtn = document.getElementById('adminEditPlayBtn');
   const { data: { user } } = await supabaseClient.auth.getUser();
@@ -497,6 +499,84 @@ async function openReviewModal(playId, playTitle, editData = null) {
   }
 }
 
+// 그 연극에 등록된 캐스팅 일정을 회차 버튼으로 보여주기
+async function loadRoundOptions(playId, editData) {
+  const roundBox = document.getElementById('roundSelectBox');
+  const manualBox = document.getElementById('manualDateTimeBox');
+
+  const { data: schedules } = await supabaseClient
+    .from('cast_schedule')
+    .select('performance_date, performance_time, people(name)')
+    .eq('play_id', playId)
+    .order('performance_date', { ascending: true });
+
+  if (!schedules || schedules.length === 0) {
+    // 등록된 일정이 없으면 회차 버튼 없이 직접 입력
+    roundBox.classList.add('hidden');
+    roundBox.innerHTML = '';
+    manualBox.style.display = 'block';
+    return;
+  }
+
+  // 날짜+시간별로 캐스팅을 묶어서 보여주기
+  const groups = {};
+  schedules.forEach(s => {
+    const key = `${s.performance_date}_${s.performance_time || ''}`;
+    if (!groups[key]) groups[key] = { date: s.performance_date, time: s.performance_time, names: [] };
+    if (s.people) groups[key].names.push(s.people.name);
+  });
+
+  const sortedGroups = Object.values(groups).sort((a, b) => {
+    const ak = `${a.date}_${a.time || ''}`;
+    const bk = `${b.date}_${b.time || ''}`;
+    return ak.localeCompare(bk);
+  });
+
+  const currentKey = editData ? `${editData.watchedDate || ''}_${editData.watchedTime || ''}` : null;
+
+  roundBox.classList.remove('hidden');
+  roundBox.innerHTML = sortedGroups.map(g => {
+    const key = `${g.date}_${g.time || ''}`;
+    const isSelected = key === currentKey;
+    return `
+      <button type="button" class="round-option-btn ${isSelected ? 'selected' : ''}" data-date="${g.date}" data-time="${g.time || ''}">
+        <span class="round-option-date">${g.date} ${g.time || ''}</span>
+        <span class="round-option-cast">${g.names.join(', ')}</span>
+      </button>
+    `;
+  }).join('');
+
+  // 직접 입력 칸도 선택 가능하게 맨 아래 추가
+  roundBox.innerHTML += `
+    <button type="button" class="round-option-btn" data-date="" data-time="" id="manualRoundBtn">
+      직접 입력 (일정에 없는 날짜예요)
+    </button>
+  `;
+
+  const hasSelectedRound = sortedGroups.some(g => `${g.date}_${g.time || ''}` === currentKey);
+  manualBox.style.display = hasSelectedRound || !editData ? 'none' : 'block';
+  if (!editData) manualBox.style.display = 'none';
+
+  roundBox.querySelectorAll('.round-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      roundBox.querySelectorAll('.round-option-btn').forEach(b => b.classList.remove('selected'));
+
+      if (btn.id === 'manualRoundBtn') {
+        manualBox.style.display = 'block';
+        document.getElementById('watchedDateInput').value = '';
+        document.getElementById('watchedTimeInput').value = '';
+        btn.classList.add('selected');
+        return;
+      }
+
+      btn.classList.add('selected');
+      manualBox.style.display = 'none';
+      document.getElementById('watchedDateInput').value = btn.dataset.date;
+      document.getElementById('watchedTimeInput').value = btn.dataset.time;
+    });
+  });
+}
+
 // ===== 공연 정보(크레딧) 표시 =====
 async function loadPlayInfo(playId) {
   const box = document.getElementById('playInfoBox');
@@ -506,7 +586,7 @@ async function loadPlayInfo(playId) {
 
   const { data: credits } = await supabaseClient
     .from('play_credits')
-    .select('role, people(id, name)')
+    .select('role, character_name, people(id, name)')
     .eq('play_id', playId);
 
   const roleOrder = ['작', '연출', '각색', '출연진', '기획', '제작', '주최', '주관'];
@@ -557,6 +637,15 @@ async function loadPlayInfo(playId) {
       openVenueModal(venueBtn.dataset.venueId);
     });
   }
+
+  const { data: scheduleCheck } = await supabaseClient
+    .from('cast_schedule')
+    .select('id')
+    .eq('play_id', playId)
+    .limit(1);
+
+  const viewBtn = document.getElementById('viewCastScheduleBtn');
+  viewBtn.classList.toggle('hidden', !scheduleCheck || scheduleCheck.length === 0);
 }
 
 // ===== 인물 상세 모달 =====
@@ -590,14 +679,74 @@ async function openPersonModal(personId) {
   const playIds = [...new Set((credits || []).filter(c => c.plays).map(c => c.plays.id))];
 
   if (playIds.length > 0) {
-    const { data: reviews } = await supabaseClient
-      .from('reviews')
-      .select('rating')
+    const { data: myCastCredits } = await supabaseClient
+      .from('play_credits')
+      .select('play_id, character_name')
+      .eq('person_id', personId)
+      .eq('role', '출연진')
       .in('play_id', playIds);
 
-    if (reviews && reviews.length > 0) {
-      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
-      document.getElementById('personAvgRating').textContent = `⭐ ${avg.toFixed(1)} (관람객 평균)`;
+    const { data: allCastCredits } = await supabaseClient
+      .from('play_credits')
+      .select('play_id, person_id, character_name')
+      .in('play_id', playIds)
+      .eq('role', '출연진');
+
+    const roleGroups = {};
+    (allCastCredits || []).forEach(c => {
+      const key = c.character_name || 'UNSPECIFIED';
+      if (!roleGroups[c.play_id]) roleGroups[c.play_id] = {};
+      if (!roleGroups[c.play_id][key]) roleGroups[c.play_id][key] = new Set();
+      roleGroups[c.play_id][key].add(c.person_id);
+    });
+
+    function isMultiCastForPerson(playId) {
+      const myCredit = (myCastCredits || []).find(c => c.play_id === playId);
+      const key = myCredit ? (myCredit.character_name || 'UNSPECIFIED') : 'UNSPECIFIED';
+      const group = roleGroups[playId] && roleGroups[playId][key];
+      return group && group.size > 1;
+    }
+
+    const { data: reviews } = await supabaseClient
+      .from('reviews')
+      .select('rating, play_id, watched_date, watched_time')
+      .in('play_id', playIds);
+
+    const { data: allSchedules } = await supabaseClient
+      .from('cast_schedule')
+      .select('play_id, performance_date, performance_time, person_id')
+      .in('play_id', playIds);
+
+    const allScheduleKeys = new Set(
+      (allSchedules || []).map(s => `${s.play_id}_${s.performance_date}_${s.performance_time || ''}`)
+    );
+    const myScheduleKeys = new Set(
+      (allSchedules || [])
+        .filter(s => s.person_id === personId)
+        .map(s => `${s.play_id}_${s.performance_date}_${s.performance_time || ''}`)
+    );
+
+    const relevantRatings = (reviews || [])
+      .filter(r => {
+        const isSingleCast = !isMultiCastForPerson(r.play_id);
+        if (isSingleCast) return true;
+
+        const key = `${r.play_id}_${r.watched_date || ''}_${r.watched_time || ''}`;
+        const hasScheduleForThatDate = allScheduleKeys.has(key);
+
+        if (hasScheduleForThatDate) {
+          return myScheduleKeys.has(key);
+        } else {
+          return true;
+        }
+      })
+      .map(r => r.rating);
+
+    if (relevantRatings.length > 0) {
+      const avg = relevantRatings.reduce((s, r) => s + r, 0) / relevantRatings.length;
+      document.getElementById('personAvgRating').textContent = `⭐ ${avg.toFixed(1)} (관람객 평균, ${relevantRatings.length}건)`;
+    } else {
+      document.getElementById('personAvgRating').textContent = '';
     }
   }
 
@@ -1345,17 +1494,121 @@ async function saveCredits(playId) {
   }
 }
 
+// ===== 관리자: 회차별 캐스팅 일정 관리 =====
+async function openCastScheduleModal() {
+  const play = allPlays.find(p => p.id === editingPlayId);
+  if (!play) {
+    alert('먼저 연극을 등록/저장한 뒤 "연극 정보 수정"으로 다시 열어서 이용해주세요.');
+    return;
+  }
+
+  document.getElementById('castScheduleModal').classList.add('active');
+  document.getElementById('castScheduleError').textContent = '';
+
+  const { data: credits } = await supabaseClient
+    .from('play_credits')
+    .select('person_id, people(id, name)')
+    .eq('play_id', play.id)
+    .eq('role', '출연진');
+
+  const actors = (credits || []).filter(c => c.people).map(c => c.people);
+  const actorSelect = document.getElementById('scheduleActorSelect');
+
+  if (actors.length === 0) {
+    actorSelect.innerHTML = `<option value="">출연진이 등록되어 있지 않아요</option>`;
+  } else {
+    actorSelect.innerHTML = actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  }
+
+  loadCastScheduleList(play.id);
+}
+
+async function loadCastScheduleList(playId) {
+  const listEl = document.getElementById('castScheduleList');
+  listEl.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: schedules } = await supabaseClient
+    .from('cast_schedule')
+    .select('id, performance_date, performance_time, people(name)')
+    .eq('play_id', playId)
+    .order('performance_date', { ascending: true });
+
+  if (!schedules || schedules.length === 0) {
+    listEl.innerHTML = `<p class="placeholder-text">등록된 일정이 없어요.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = schedules.map(s => `
+    <div class="schedule-item">
+      <span>${s.performance_date} ${s.performance_time || ''} — ${s.people ? s.people.name : '삭제된 배우'}</span>
+      <button class="schedule-delete-btn" data-id="${s.id}">삭제</button>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.schedule-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await supabaseClient.from('cast_schedule').delete().eq('id', btn.dataset.id);
+      loadCastScheduleList(playId);
+    });
+  });
+}
+
+function setupCastScheduleModal() {
+  document.getElementById('openCastScheduleBtn').addEventListener('click', () => {
+    openCastScheduleModal();
+  });
+
+  document.getElementById('closeCastScheduleModal').addEventListener('click', () => {
+    document.getElementById('castScheduleModal').classList.remove('active');
+  });
+
+  document.getElementById('scheduleAddBtn').addEventListener('click', async () => {
+    const errorText = document.getElementById('castScheduleError');
+    errorText.textContent = '';
+
+    const play = allPlays.find(p => p.id === editingPlayId);
+    if (!play) return;
+
+    const date = document.getElementById('scheduleDateInput').value;
+    const time = document.getElementById('scheduleTimeInput').value.trim() || null;
+    const personId = document.getElementById('scheduleActorSelect').value;
+
+    if (!date || !personId) {
+      errorText.textContent = '날짜와 배우를 모두 선택해주세요.';
+      return;
+    }
+
+    const { error } = await supabaseClient.from('cast_schedule').insert({
+      play_id: play.id,
+      performance_date: date,
+      performance_time: time,
+      person_id: personId
+    });
+
+    if (error) {
+      errorText.textContent = '추가 중 오류: ' + error.message;
+      return;
+    }
+
+    document.getElementById('scheduleDateInput').value = '';
+    document.getElementById('scheduleTimeInput').value = '';
+    loadCastScheduleList(play.id);
+  });
+}
+
 function setupAdminModal() {
   const modal = document.getElementById('adminModal');
   const openBtn = document.getElementById('adminAddBtn');
   const closeBtn = document.getElementById('closeAdminModal');
   const submitBtn = document.getElementById('adminSubmitBtn');
   const errorText = document.getElementById('adminError');
+  const deleteBtn = document.getElementById('adminDeletePlayBtn');
 
   openBtn.addEventListener('click', (e) => {
     e.preventDefault();
     editingPlayId = null;
     submitBtn.textContent = '등록하기';
+    deleteBtn.classList.add('hidden');
     document.getElementById('adminTitle').value = '';
     document.getElementById('adminPoster').value = '';
     document.getElementById('adminVenue').value = '';
@@ -1437,6 +1690,34 @@ function setupAdminModal() {
     editingPlayId = null;
     submitBtn.textContent = '등록하기';
 
+    loadPlays();
+  });
+
+  deleteBtn.addEventListener('click', async () => {
+    if (!editingPlayId) return;
+
+    const play = allPlays.find(p => p.id === editingPlayId);
+    const playTitle = play ? play.title : '이 연극';
+
+    const confirmText = prompt(`정말 "${playTitle}"을(를) 삭제하시겠어요?\n연결된 후기, 댓글, 좋아요, 캐스팅 정보도 모두 함께 삭제되며 되돌릴 수 없어요.\n\n삭제하시려면 아래에 "삭제"라고 입력해주세요.`);
+
+    if (confirmText !== '삭제') {
+      if (confirmText !== null) {
+        alert('입력이 일치하지 않아 삭제가 취소되었어요.');
+      }
+      return;
+    }
+
+    const { error } = await supabaseClient.from('plays').delete().eq('id', editingPlayId);
+
+    if (error) {
+      errorText.textContent = '삭제 중 오류: ' + error.message;
+      return;
+    }
+
+    alert('연극이 삭제되었어요.');
+    modal.classList.remove('active');
+    editingPlayId = null;
     loadPlays();
   });
 }
@@ -1580,6 +1861,72 @@ function setupCommentModal() {
   });
 }
 
+async function openViewCastScheduleModal(playId) {
+  document.getElementById('viewCastScheduleModal').classList.add('active');
+  const listEl = document.getElementById('viewCastScheduleList');
+  listEl.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: schedules } = await supabaseClient
+    .from('cast_schedule')
+    .select('performance_date, performance_time, people(name), person_id')
+    .eq('play_id', playId)
+    .order('performance_date', { ascending: true });
+
+  if (!schedules || schedules.length === 0) {
+    listEl.innerHTML = `<p class="placeholder-text">등록된 캐스팅 일정이 없어요.</p>`;
+    return;
+  }
+
+  const { data: credits } = await supabaseClient
+    .from('play_credits')
+    .select('person_id, character_name')
+    .eq('play_id', playId)
+    .eq('role', '출연진');
+
+  const characterByPerson = {};
+  (credits || []).forEach(c => {
+    if (c.character_name) characterByPerson[c.person_id] = c.character_name;
+  });
+
+  const groups = {};
+  schedules.forEach(s => {
+    const key = `${s.performance_date}_${s.performance_time || ''}`;
+    if (!groups[key]) groups[key] = { date: s.performance_date, time: s.performance_time, entries: [] };
+    groups[key].entries.push({
+      actorName: s.people ? s.people.name : '알 수 없음',
+      character: characterByPerson[s.person_id] || null
+    });
+  });
+
+  const sortedGroups = Object.values(groups).sort((a, b) => {
+    const ak = `${a.date}_${a.time || ''}`;
+    const bk = `${b.date}_${b.time || ''}`;
+    return ak.localeCompare(bk);
+  });
+
+  listEl.innerHTML = sortedGroups.map(g => `
+    <div class="view-schedule-group">
+      <div class="view-schedule-date">${g.date} ${g.time || ''}</div>
+      ${g.entries.map(e => `
+        <div class="view-schedule-role-row">
+          ${e.character ? `<span class="view-schedule-role-name">${e.character}</span>` : ''}
+          <span>${e.actorName}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function setupViewCastScheduleModal() {
+  document.getElementById('viewCastScheduleBtn').addEventListener('click', () => {
+    openViewCastScheduleModal(currentPlayId);
+  });
+
+  document.getElementById('closeViewCastScheduleModal').addEventListener('click', () => {
+    document.getElementById('viewCastScheduleModal').classList.remove('active');
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
   setupSearch();
@@ -1594,4 +1941,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVenueModal();
   setupReviewSort();
   setupCommentModal();
+  setupCastScheduleModal();
+  setupViewCastScheduleModal();
 });
