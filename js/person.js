@@ -130,6 +130,8 @@ async function initPersonPage() {
     });
   }
 
+  await loadCoCastList(personId, credits);
+
   const isAdmin = await isCurrentUserAdmin();
   if (isAdmin) {
     document.getElementById('personBioEditBox').classList.remove('hidden');
@@ -141,6 +143,58 @@ async function initPersonPage() {
       alert('소개가 저장되었어요.');
     };
   }
+}
+
+// ===== 공동출연: 같은 연극에 함께 출연한 배우들 =====
+async function loadCoCastList(personId, credits) {
+  const section = document.getElementById('personCoCastSection');
+  const box = document.getElementById('personCoCast');
+
+  const castPlayIds = (credits || [])
+    .filter(c => c.role === '출연진' && c.plays)
+    .map(c => c.plays.id);
+
+  if (castPlayIds.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  box.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: coCastCredits } = await supabaseClient
+    .from('play_credits')
+    .select('person_id, people(id, name)')
+    .eq('role', '출연진')
+    .in('play_id', castPlayIds);
+
+  const coCount = {};
+  (coCastCredits || []).forEach(c => {
+    if (!c.people || c.person_id === personId) return;
+    if (!coCount[c.person_id]) coCount[c.person_id] = { id: c.person_id, name: c.people.name, count: 0 };
+    coCount[c.person_id].count += 1;
+  });
+
+  const coList = Object.values(coCount).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  if (coList.length === 0) {
+    box.innerHTML = `<p class="placeholder-text">아직 함께 출연한 배우 데이터가 없어요.</p>`;
+    return;
+  }
+
+  box.innerHTML = coList.map((c, i) => `
+    <div class="taste-rank-item trending-rank-item" data-nav="person.html?id=${encodeURIComponent(c.id)}">
+      <span class="taste-rank-num">${i + 1}</span>
+      <span class="taste-rank-name">${c.name}</span>
+      <span class="taste-rank-count">${c.count}작품</span>
+    </div>
+  `).join('');
+
+  box.querySelectorAll('.trending-rank-item').forEach(el => {
+    el.addEventListener('click', () => {
+      location.href = el.dataset.nav;
+    });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

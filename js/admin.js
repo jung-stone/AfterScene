@@ -62,6 +62,7 @@ async function initAdminPage() {
     grouped[c.role].push(c.people.name);
   });
 
+  document.getElementById('adminOriginal').value = (grouped['원작'] || []).join(', ');
   document.getElementById('adminWriter').value = (grouped['작'] || []).join(', ');
   document.getElementById('adminDirector').value = (grouped['연출'] || []).join(', ');
   document.getElementById('adminAdaptation').value = (grouped['각색'] || []).join(', ');
@@ -124,6 +125,7 @@ async function findOrCreateVenueId(name) {
 
 async function saveCredits(playId) {
   const roleFields = {
+    '원작': 'adminOriginal',
     '작': 'adminWriter',
     '연출': 'adminDirector',
     '각색': 'adminAdaptation',

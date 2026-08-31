@@ -83,8 +83,59 @@ a {
 }
 
 .search-box {
+  position: relative;
   flex: 1;
   max-width: 420px;
+}
+
+.search-suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  z-index: 150;
+}
+
+.search-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background var(--transition);
+}
+
+.search-suggest-item:hover {
+  background: var(--bg-surface-2);
+}
+
+.search-suggest-badge {
+  font-size: 11px;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+.search-suggest-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-suggest-empty {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-faint);
 }
 
 .search-box input {
@@ -1257,6 +1308,18 @@ a {
   margin-bottom: var(--space-4);
 }
 
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.page-header-row h2 {
+  margin-bottom: 0;
+}
+
 .follow-btn {
   background: none;
   border: 1px solid var(--border);
@@ -1285,6 +1348,36 @@ a {
 .follow-count {
   font-size: 12.5px;
   color: var(--text-faint);
+}
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.share-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== 닉네임 -> 공개 프로필 링크 ===== */
+.profile-link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color var(--transition), text-decoration-color var(--transition);
+}
+
+.profile-link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
 }
 
 /* ===== 마이페이지 - 팔로우한 배우 · 공연장 ===== */

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>인물 상세 | AfterScene</title>
+  <title>프로필 | AfterScene</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -25,27 +25,24 @@
 
     <div class="modal-box mypage-box page-box">
       <div class="page-header-row">
-        <h2 id="personName">이름</h2>
-        <button type="button" class="share-btn hidden" id="shareBtn">🔗 공유</button>
-      </div>
-      <div class="follow-row">
-        <button type="button" class="follow-btn hidden" id="followBtn">☆ 팔로우</button>
-        <span class="follow-count hidden" id="followCount"></span>
-      </div>
-      <div class="archive-avg-rating" id="personAvgRating"></div>
-      <p class="mypage-email" id="personBio"></p>
-
-      <div class="admin-bio-edit hidden" id="personBioEditBox">
-        <textarea id="personBioInput" rows="3" placeholder="소개를 입력하세요"></textarea>
-        <button id="personBioSaveBtn">소개 저장</button>
+        <h2 id="profileNickname">닉네임</h2>
+        <button type="button" class="share-btn hidden" id="shareBtn">🔗 공유하기</button>
       </div>
 
-      <h3 class="mypage-section-title">참여 작품</h3>
-      <div class="person-play-list" id="personPlayList"></div>
+      <div class="mypage-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="profileReviewCount">0</div>
+          <div class="stat-label">작성한 후기</div>
+        </div>
+      </div>
 
-      <div id="personCoCastSection" class="hidden">
-        <h3 class="mypage-section-title">🤝 자주 함께 출연한 배우</h3>
-        <div id="personCoCast"></div>
+      <div class="taste-stats" id="profileTasteStats">
+        <p class="placeholder-text">불러오는 중...</p>
+      </div>
+
+      <h3 class="mypage-section-title">남긴 후기</h3>
+      <div class="my-review-list" id="profileReviewList">
+        <p class="placeholder-text">불러오는 중...</p>
       </div>
     </div>
   </main>
@@ -57,6 +54,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/common.js"></script>
-  <script src="js/person.js"></script>
+  <script src="js/profile.js"></script>
 </body>
 </html>

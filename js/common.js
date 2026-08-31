@@ -284,6 +284,24 @@ async function setupFollowButton(entityType, entityId) {
   });
 }
 
+// ===== 공유하기 버튼: 현재 페이지 링크를 클립보드에 복사 =====
+function setupShareButton() {
+  const btn = document.getElementById('shareBtn');
+  if (!btn) return;
+
+  btn.classList.remove('hidden');
+
+  btn.addEventListener('click', async () => {
+    const url = location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('링크가 복사되었어요! 원하는 곳에 붙여넣어 공유해보세요.');
+    } catch (e) {
+      prompt('아래 링크를 복사해주세요.', url);
+    }
+  });
+}
+
 // 뒤로가기 링크: 같은 사이트 안에서 넘어온 경우 브라우저 히스토리로, 아니면 목록으로
 function setupBackLink() {
   const backLink = document.getElementById('backLink');
@@ -304,4 +322,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAuthModal();
   updateAuthUI();
   setupBackLink();
+  setupShareButton();
 });

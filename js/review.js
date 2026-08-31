@@ -241,7 +241,7 @@ async function loadPlayInfo(play) {
     .select('role, character_name, people(id, name)')
     .eq('play_id', play.id);
 
-  const roleOrder = ['작', '연출', '각색', '출연진', '기획', '제작', '주최', '주관'];
+  const roleOrder = ['원작', '작', '연출', '각색', '출연진', '기획', '제작', '주최', '주관'];
   const grouped = {};
   (credits || []).forEach(c => {
     if (!c.people) return;
@@ -392,8 +392,13 @@ async function loadPlayReviews(playId) {
     groupArray.sort((a, b) => (b.latestCreated > a.latestCreated ? 1 : -1));
   }
 
+  function profileLink(userId, nickname) {
+    return `<span class="profile-link" data-user-id="${userId}">${nickname}</span>`;
+  }
+
   function renderVisitRow(review, roundLabel, diffTagHtml, group) {
     const nickname = nicknameMap[review.user_id] || '익명';
+    const nicknameLink = profileLink(review.user_id, nickname);
     const date = review.watched_date || new Date(review.created_at).toLocaleDateString('ko-KR');
     const likeCount = likeCountMap[review.id] || 0;
     const commentCount = commentCountMap[review.id] || 0;
@@ -411,7 +416,7 @@ async function loadPlayReviews(playId) {
     return `
       <div class="existing-review-card review-visit-item" data-review-id="${review.id}">
         <div class="review-top">
-          <span class="review-rating">${roundLabel ? `<span class="review-visit-round">${roundLabel}</span>` : ''}⭐ ${review.rating.toFixed(1)}${roundLabel ? '' : ' · ' + nickname}</span>
+          <span class="review-rating">${roundLabel ? `<span class="review-visit-round">${roundLabel}</span>` : ''}⭐ ${review.rating.toFixed(1)}${roundLabel ? '' : ' · ' + nicknameLink}</span>
           <span class="review-date">${date}</span>
         </div>
         ${diffTagHtml || ''}
@@ -453,7 +458,7 @@ async function loadPlayReviews(playId) {
     const previewHtml = `
       <div class="review-group-preview">
         <div class="review-top">
-          <span class="review-rating">⭐ ${rep.rating.toFixed(1)} · ${nickname}</span>
+          <span class="review-rating">⭐ ${rep.rating.toFixed(1)} · ${profileLink(group.userId, nickname)}</span>
           <span class="review-date">${repDate}</span>
         </div>
         ${repIsRepTag}
@@ -486,7 +491,7 @@ async function loadPlayReviews(playId) {
       <div class="review-group" data-group-id="${group.userId}">
         <div class="review-group-header">
           <div>
-            <span class="review-group-title">${nickname}</span>
+            <span class="review-group-title">${profileLink(group.userId, nickname)}</span>
             <span class="review-group-badge">${badge}</span>
           </div>
           <div class="review-group-summary">
@@ -521,6 +526,13 @@ async function loadPlayReviews(playId) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleLike(btn);
+    });
+  });
+
+  listContainer.querySelectorAll('.profile-link').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      location.href = `profile.html?id=${encodeURIComponent(el.dataset.userId)}`;
     });
   });
 
@@ -693,7 +705,7 @@ async function loadComments(reviewId) {
     return `
       <div class="comment-item">
         <div class="comment-top">
-          <span class="comment-nickname">${nickname}</span>
+          <span class="comment-nickname profile-link" data-user-id="${c.user_id}">${nickname}</span>
           <span class="comment-date">${date}</span>
         </div>
         <div class="comment-content">${c.content}</div>
@@ -701,6 +713,12 @@ async function loadComments(reviewId) {
       </div>
     `;
   }).join('');
+
+  listEl.querySelectorAll('.profile-link').forEach(el => {
+    el.addEventListener('click', () => {
+      location.href = `profile.html?id=${encodeURIComponent(el.dataset.userId)}`;
+    });
+  });
 
   listEl.querySelectorAll('.comment-delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {

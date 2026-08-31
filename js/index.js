@@ -96,15 +96,21 @@ function renderPlays(plays, containerId) {
 }
 
 // ===== 검색 =====
+let searchSuggestDebounce = null;
+
 function setupSearch() {
   const searchInput = document.getElementById('searchInput');
+  const suggestBox = document.getElementById('searchSuggest');
 
   searchInput.addEventListener('input', (e) => {
-    const keyword = e.target.value.trim().toLowerCase();
+    const rawKeyword = e.target.value.trim();
+    const keyword = rawKeyword.toLowerCase();
     const ongoingSection = document.querySelector('#ongoingPlays').closest('.play-section');
     const upcomingSection = document.querySelector('#upcomingPlays').closest('.play-section');
     const endedSection = document.querySelector('#endedPlays').closest('.play-section');
     const ongoingTitleEl = ongoingSection.querySelector('.section-title');
+
+    clearTimeout(searchSuggestDebounce);
 
     if (keyword === '') {
       document.querySelector('.hero').style.display = 'block';
@@ -112,6 +118,8 @@ function setupSearch() {
       endedSection.style.display = 'block';
       ongoingTitleEl.textContent = '🎭 공연중';
       applyGenreFilter();
+      suggestBox.classList.add('hidden');
+      suggestBox.innerHTML = '';
       return;
     }
 
@@ -122,11 +130,57 @@ function setupSearch() {
     document.querySelector('.hero').style.display = 'none';
     upcomingSection.style.display = 'none';
     endedSection.style.display = 'none';
-    ongoingTitleEl.textContent = `🔍 "${e.target.value}" 검색 결과 (${filtered.length}건)`;
+    ongoingTitleEl.textContent = `🔍 "${rawKeyword}" 검색 결과 (${filtered.length}건)`;
 
     visibleCounts['ongoingPlays'] = filtered.length || PAGE_SIZE;
     renderPlays(filtered, 'ongoingPlays');
+
+    searchSuggestDebounce = setTimeout(() => loadSearchSuggestions(rawKeyword), 250);
   });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-box')) {
+      suggestBox.classList.add('hidden');
+    }
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (suggestBox.innerHTML.trim()) suggestBox.classList.remove('hidden');
+  });
+}
+
+// 배우/연출/공연장 등 인물·공연장 이름으로도 검색되게 하는 드롭다운
+async function loadSearchSuggestions(keyword) {
+  const suggestBox = document.getElementById('searchSuggest');
+
+  const [{ data: people }, { data: venues }] = await Promise.all([
+    supabaseClient.from('people').select('id, name').ilike('name', `%${keyword}%`).limit(5),
+    supabaseClient.from('venues').select('id, name').ilike('name', `%${keyword}%`).limit(5)
+  ]);
+
+  const items = [
+    ...(people || []).map(p => ({ type: '인물', name: p.name, href: `person.html?id=${encodeURIComponent(p.id)}` })),
+    ...(venues || []).map(v => ({ type: '공연장', name: v.name, href: `venue.html?id=${encodeURIComponent(v.id)}` }))
+  ];
+
+  if (items.length === 0) {
+    suggestBox.innerHTML = `<div class="search-suggest-empty">일치하는 배우·공연장이 없어요.</div>`;
+  } else {
+    suggestBox.innerHTML = items.map(item => `
+      <div class="search-suggest-item" data-href="${item.href}">
+        <span class="search-suggest-badge">${item.type}</span>
+        <span class="search-suggest-name">${item.name}</span>
+      </div>
+    `).join('');
+
+    suggestBox.querySelectorAll('.search-suggest-item').forEach(el => {
+      el.addEventListener('click', () => {
+        location.href = el.dataset.href;
+      });
+    });
+  }
+
+  suggestBox.classList.remove('hidden');
 }
 
 // ===== 정렬 =====
@@ -245,7 +299,7 @@ async function loadRecentFeed() {
         <img src="${posterUrl}" alt="${r.plays.title}" />
         <div class="feed-card-body">
           <div class="feed-card-top">
-            <span class="feed-card-nickname">${nickname}</span>
+            <span class="feed-card-nickname profile-link" data-user-id="${r.user_id}">${nickname}</span>
             <span class="feed-card-time">${toRelativeTime(r.created_at)}</span>
           </div>
           <div class="feed-card-play-title">${r.plays.title}</div>
@@ -261,6 +315,13 @@ async function loadRecentFeed() {
   container.querySelectorAll('.feed-card').forEach(card => {
     card.addEventListener('click', () => {
       location.href = `review.html?playId=${encodeURIComponent(card.dataset.playId)}`;
+    });
+  });
+
+  container.querySelectorAll('.profile-link').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      location.href = `profile.html?id=${encodeURIComponent(el.dataset.userId)}`;
     });
   });
 }
