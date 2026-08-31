@@ -26,6 +26,7 @@
     <div class="modal-box mypage-box page-box">
       <h2 id="adminFormTitle">새 연극 등록</h2>
 
+      <h3 class="mypage-section-title">기본 정보</h3>
       <input type="text" id="adminTitle" placeholder="연극 제목" />
       <input type="text" id="adminPoster" placeholder="포스터 이미지 URL" />
       <input type="text" id="adminVenue" placeholder="공연 장소" />
@@ -45,6 +46,7 @@
       <label class="admin-label">공연 종료일</label>
       <input type="date" id="adminEndDate" />
 
+      <h3 class="mypage-section-title">제작진 · 크레딧</h3>
       <label class="admin-label">작 (쉼표로 구분)</label>
       <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
       <label class="admin-label">연출 (쉼표로 구분)</label>
@@ -61,7 +63,10 @@
       <input type="text" id="adminHost" placeholder="예: OO문화재단" />
       <label class="admin-label">주관 (쉼표로 구분)</label>
       <input type="text" id="adminSupervisor" placeholder="예: OO컴퍼니" />
+
+      <h3 class="mypage-section-title hidden" id="castScheduleSectionTitle">일정 관리</h3>
       <a href="#" class="admin-edit-play-btn hidden" id="openCastScheduleBtn">🗓 회차별 캐스팅 일정 관리</a>
+
       <button class="modal-submit-btn" id="adminSubmitBtn">등록하기</button>
       <button type="button" class="admin-delete-play-btn hidden" id="adminDeletePlayBtn">🗑 이 연극 삭제하기</button>
       <p class="modal-error" id="adminError"></p>

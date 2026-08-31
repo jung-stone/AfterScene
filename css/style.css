@@ -1,3 +1,37 @@
+/* ===== 디자인 토큰 ===== */
+:root {
+  /* 색상 */
+  --bg-base: #14161a;
+  --bg-surface: #1c1f26;
+  --bg-surface-2: #22252d;
+  --bg-surface-3: #2a2e37;
+  --border: #2a2e37;
+  --text-primary: #f5f5f5;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --text-faint: #6b7280;
+  --accent: #ff5a5f;
+  --accent-hover: #e04d52;
+  --accent-soft: rgba(255, 90, 95, 0.12);
+
+  /* 간격 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* 모양 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --transition: 0.15s ease;
+}
+
 /* ===== 기본 초기화 ===== */
 * {
   margin: 0;
@@ -7,8 +41,8 @@
 
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
-  background-color: #14161a;
-  color: #f5f5f5;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   line-height: 1.5;
 }
 
@@ -75,13 +109,21 @@ a {
 
 .nav-menu {
   display: flex;
-  gap: 18px;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
-  color: #d1d5db;
+  color: var(--text-secondary);
+}
+
+.nav-menu a {
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  transition: background var(--transition), color var(--transition);
 }
 
 .nav-menu a:hover {
-  color: #ff5a5f;
+  background: var(--bg-surface-2);
+  color: var(--accent);
 }
 
 /* ===== 히어로 영역 ===== */
@@ -269,8 +311,13 @@ a {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: 8px;
-  background-color: #22252d;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface-2);
+  transition: box-shadow 0.2s;
+}
+
+.play-card:hover img {
+  box-shadow: var(--shadow-elevated);
 }
 
 .play-card .play-title {
@@ -319,26 +366,50 @@ a {
 
 /* ===== 서브페이지 공통 레이아웃 (모달 대체) ===== */
 .page-shell {
-  max-width: 700px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: var(--space-6) var(--space-4) 96px;
 }
 
 .back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #9ca3af;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--space-5);
+  padding: 6px 14px 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
   cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .back-link:hover {
-  color: #ff5a5f;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-surface-2);
 }
 
 .page-box {
+  max-width: none !important;
+  width: 100%;
   max-height: none !important;
   overflow-y: visible !important;
+  padding: var(--space-6) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-elevated);
+}
+
+.page-box h2 {
+  margin-bottom: var(--space-5);
+}
+
+.page-box .mypage-section-title {
+  margin: var(--space-6) 0 var(--space-3);
 }
 
 /* ===== 공통 모달 ===== */
@@ -1209,6 +1280,14 @@ a {
 
   .mypage-box {
     max-width: 100%;
+  }
+
+  .page-shell {
+    padding: var(--space-4) var(--space-3) 64px;
+  }
+
+  .page-box {
+    padding: 20px 16px !important;
   }
 
   .modal-box h2 {

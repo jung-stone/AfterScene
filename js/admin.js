@@ -48,6 +48,7 @@ async function initAdminPage() {
   deleteBtn.classList.remove('hidden');
   castScheduleLink.href = `cast-schedule.html?playId=${encodeURIComponent(editingPlayId)}`;
   castScheduleLink.classList.remove('hidden');
+  document.getElementById('castScheduleSectionTitle').classList.remove('hidden');
 
   const { data: credits } = await supabaseClient
     .from('play_credits')
