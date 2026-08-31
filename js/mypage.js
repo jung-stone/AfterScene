@@ -150,7 +150,7 @@ async function loadMyReviews(userId) {
       : new Date(review.created_at).toLocaleDateString('ko-KR') + ' 작성';
 
     return `
-      <div class="my-review-card" data-review-id="${review.id}">
+      <div class="my-review-card" data-review-id="${review.id}" data-play-id="${review.play_id || ''}">
         <img class="my-review-poster" src="${posterUrl}" alt="${playTitle}" />
         <div class="my-review-content">
           <div class="my-review-date">${watchedDateText}</div>
@@ -166,6 +166,14 @@ async function loadMyReviews(userId) {
     `;
   }).join('');
 
+  listContainer.querySelectorAll('.my-review-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn')) return;
+      if (!card.dataset.playId) return;
+      location.href = `review.html?playId=${encodeURIComponent(card.dataset.playId)}`;
+    });
+  });
+
   listContainer.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       location.href = `review.html?playId=${encodeURIComponent(btn.dataset.playId)}&edit=${encodeURIComponent(btn.dataset.reviewId)}`;
@@ -173,7 +181,8 @@ async function loadMyReviews(userId) {
   });
 
   listContainer.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       if (!confirm('정말 이 후기를 삭제하시겠어요?')) return;
 
       const { error } = await supabaseClient
@@ -213,21 +222,26 @@ async function loadMyStats(userId) {
 
   const { data: plays } = await supabaseClient
     .from('plays')
-    .select('id, venue')
+    .select('id, venue, venue_id')
     .in('id', playIds);
 
   const venueByPlay = {};
-  (plays || []).forEach(p => { venueByPlay[p.id] = p.venue || '장소 미정'; });
+  (plays || []).forEach(p => {
+    venueByPlay[p.id] = { id: p.venue_id || null, name: p.venue || '장소 미정' };
+  });
 
+  // 키가 없는(venue_id 없는) 항목은 클릭 불가한 "장소 미정"으로 하나의 키에 모은다
   const venueCount = {};
   reviews.forEach(r => {
-    const venue = venueByPlay[r.play_id] || '장소 미정';
-    venueCount[venue] = (venueCount[venue] || 0) + 1;
+    const venue = venueByPlay[r.play_id] || { id: null, name: '장소 미정' };
+    const key = venue.id || 'unknown';
+    if (!venueCount[key]) venueCount[key] = { id: venue.id, name: venue.name, count: 0 };
+    venueCount[key].count += 1;
   });
 
   const { data: credits } = await supabaseClient
     .from('play_credits')
-    .select('play_id, role, people(name)')
+    .select('play_id, role, person_id, people(id, name)')
     .in('play_id', playIds)
     .in('role', ['출연진', '연출']);
 
@@ -235,7 +249,7 @@ async function loadMyStats(userId) {
   (credits || []).forEach(c => {
     if (!c.people) return;
     if (!creditsByPlay[c.play_id]) creditsByPlay[c.play_id] = { '출연진': [], '연출': [] };
-    creditsByPlay[c.play_id][c.role].push(c.people.name);
+    creditsByPlay[c.play_id][c.role].push({ id: c.person_id, name: c.people.name });
   });
 
   const actorCount = {};
@@ -244,17 +258,23 @@ async function loadMyStats(userId) {
   reviews.forEach(r => {
     const info = creditsByPlay[r.play_id];
     if (!info) return;
-    info['출연진'].forEach(name => { actorCount[name] = (actorCount[name] || 0) + 1; });
-    info['연출'].forEach(name => { directorCount[name] = (directorCount[name] || 0) + 1; });
+    info['출연진'].forEach(person => {
+      if (!actorCount[person.id]) actorCount[person.id] = { id: person.id, name: person.name, count: 0 };
+      actorCount[person.id].count += 1;
+    });
+    info['연출'].forEach(person => {
+      if (!directorCount[person.id]) directorCount[person.id] = { id: person.id, name: person.name, count: 0 };
+      directorCount[person.id].count += 1;
+    });
   });
 
   const toRankList = (countMap, limit = 3) => {
-    return Object.entries(countMap)
-      .sort((a, b) => b[1] - a[1])
+    return Object.values(countMap)
+      .sort((a, b) => b.count - a.count)
       .slice(0, limit);
   };
 
-  const renderRankGroup = (title, list, unit) => {
+  const renderRankGroup = (title, list, unit, navBase) => {
     if (list.length === 0) {
       return `<div class="taste-group">
         <div class="taste-group-title">${title}</div>
@@ -264,10 +284,10 @@ async function loadMyStats(userId) {
     return `<div class="taste-group">
       <div class="taste-group-title">${title}</div>
       ${list.map((item, i) => `
-        <div class="taste-rank-item">
+        <div class="taste-rank-item${item.id ? ' trending-rank-item' : ''}" ${item.id ? `data-nav="${navBase}${encodeURIComponent(item.id)}"` : ''}>
           <span class="taste-rank-num">${i + 1}</span>
-          <span class="taste-rank-name">${item[0]}</span>
-          <span class="taste-rank-count">${item[1]}${unit}</span>
+          <span class="taste-rank-name">${item.name}</span>
+          <span class="taste-rank-count">${item.count}${unit}</span>
         </div>
       `).join('')}
     </div>`;
@@ -280,11 +300,17 @@ async function loadMyStats(userId) {
     </div>
   `;
 
-  html += renderRankGroup('🎭 자주 본 배우', toRankList(actorCount), '회');
-  html += renderRankGroup('🎬 자주 본 연출', toRankList(directorCount), '회');
-  html += renderRankGroup('📍 자주 간 극장', toRankList(venueCount), '회');
+  html += renderRankGroup('🎭 자주 본 배우', toRankList(actorCount), '회', 'person.html?id=');
+  html += renderRankGroup('🎬 자주 본 연출', toRankList(directorCount), '회', 'person.html?id=');
+  html += renderRankGroup('📍 자주 간 극장', toRankList(venueCount), '회', 'venue.html?id=');
 
   box.innerHTML = html;
+
+  box.querySelectorAll('.trending-rank-item').forEach(el => {
+    el.addEventListener('click', () => {
+      location.href = el.dataset.nav;
+    });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

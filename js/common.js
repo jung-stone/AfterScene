@@ -198,12 +198,13 @@ async function isFollowing(entityType, entityId) {
   return !!data;
 }
 
+// 반환값: 실제로 팔로우 상태가 바뀌었으면 true, 취소(로그인 필요/오류)면 false
 async function toggleFollow(entityType, entityId, btnEl) {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) {
     alert('로그인 후 이용해주세요.');
     document.getElementById('authModal').classList.add('active');
-    return;
+    return false;
   }
 
   const isFollowingNow = btnEl.classList.contains('following');
@@ -218,7 +219,7 @@ async function toggleFollow(entityType, entityId, btnEl) {
 
     if (error) {
       alert('팔로우 취소 중 오류가 발생했어요: ' + error.message);
-      return;
+      return false;
     }
 
     btnEl.classList.remove('following');
@@ -230,24 +231,57 @@ async function toggleFollow(entityType, entityId, btnEl) {
 
     if (error) {
       alert('팔로우 중 오류가 발생했어요: ' + error.message);
-      return;
+      return false;
     }
 
     btnEl.classList.add('following');
     btnEl.textContent = '★ 팔로우 중';
   }
+
+  return true;
+}
+
+// 해당 대상(배우/공연장 등)을 팔로우하고 있는 사람 수
+async function getFollowerCount(entityType, entityId) {
+  const { count, error } = await supabaseClient
+    .from('follows')
+    .select('id', { count: 'exact', head: true })
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId);
+
+  if (error) {
+    console.error('팔로워 수 조회 오류:', error);
+    return 0;
+  }
+  return count || 0;
 }
 
 async function setupFollowButton(entityType, entityId) {
   const btn = document.getElementById('followBtn');
   if (!btn) return;
 
-  const following = await isFollowing(entityType, entityId);
+  const countEl = document.getElementById('followCount');
+
+  const renderCount = async () => {
+    if (!countEl) return;
+    const count = await getFollowerCount(entityType, entityId);
+    countEl.textContent = `팔로워 ${count}명`;
+  };
+
+  const [following] = await Promise.all([
+    isFollowing(entityType, entityId),
+    renderCount()
+  ]);
+
   btn.classList.toggle('following', following);
   btn.textContent = following ? '★ 팔로우 중' : '☆ 팔로우';
   btn.classList.remove('hidden');
+  if (countEl) countEl.classList.remove('hidden');
 
-  btn.addEventListener('click', () => toggleFollow(entityType, entityId, btn));
+  btn.addEventListener('click', async () => {
+    const changed = await toggleFollow(entityType, entityId, btn);
+    if (changed) renderCount();
+  });
 }
 
 // 뒤로가기 링크: 같은 사이트 안에서 넘어온 경우 브라우저 히스토리로, 아니면 목록으로

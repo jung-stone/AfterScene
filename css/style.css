@@ -1158,6 +1158,12 @@ a {
   padding: 12px;
   margin-bottom: 12px;
   position: relative;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.my-review-card:hover {
+  background: var(--bg-surface-3);
 }
 
 .my-review-poster {
@@ -1244,6 +1250,13 @@ a {
   margin-bottom: 8px;
 }
 
+.follow-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
 .follow-btn {
   background: none;
   border: 1px solid var(--border);
@@ -1255,7 +1268,6 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-bottom: var(--space-4);
   transition: all var(--transition);
 }
 
@@ -1268,6 +1280,11 @@ a {
   background: var(--accent);
   border-color: var(--accent);
   color: white;
+}
+
+.follow-count {
+  font-size: 12.5px;
+  color: var(--text-faint);
 }
 
 /* ===== 마이페이지 - 팔로우한 배우 · 공연장 ===== */
