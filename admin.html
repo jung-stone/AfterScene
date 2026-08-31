@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>연극 등록/수정 | AfterScene</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- 상단 헤더 -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">AfterScene</a>
+      <nav class="nav-menu">
+        <a href="admin.html" id="adminAddBtn" class="hidden">+ 연극 등록</a>
+        <a href="mypage.html" id="myPageBtn">마이페이지</a>
+        <a href="#" id="loginBtn">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <a href="#" class="back-link" id="backLink">← 뒤로가기</a>
+
+    <div class="modal-box mypage-box page-box">
+      <h2 id="adminFormTitle">새 연극 등록</h2>
+
+      <input type="text" id="adminTitle" placeholder="연극 제목" />
+      <input type="text" id="adminPoster" placeholder="포스터 이미지 URL" />
+      <input type="text" id="adminVenue" placeholder="공연 장소" />
+
+      <label class="admin-label">장르</label>
+      <select id="adminGenre">
+        <option value="연극">연극</option>
+        <option value="뮤지컬">뮤지컬</option>
+        <option value="코미디">코미디</option>
+        <option value="기타">기타</option>
+      </select>
+
+      <textarea id="adminDescription" placeholder="연극 소개" rows="3"></textarea>
+
+      <label class="admin-label">공연 시작일</label>
+      <input type="date" id="adminStartDate" />
+      <label class="admin-label">공연 종료일</label>
+      <input type="date" id="adminEndDate" />
+
+      <label class="admin-label">작 (쉼표로 구분)</label>
+      <input type="text" id="adminWriter" placeholder="예: 안톤 체호프" />
+      <label class="admin-label">연출 (쉼표로 구분)</label>
+      <input type="text" id="adminDirector" placeholder="예: 박연출" />
+      <label class="admin-label">각색 (쉼표로 구분)</label>
+      <input type="text" id="adminAdaptation" placeholder="예: 김각색" />
+      <label class="admin-label">출연진 (쉼표로 구분)</label>
+      <input type="text" id="adminCast" placeholder="예: 홍길동, 김철수" />
+      <label class="admin-label">기획 (쉼표로 구분)</label>
+      <input type="text" id="adminPlan" placeholder="예: OO컴퍼니" />
+      <label class="admin-label">제작 (쉼표로 구분)</label>
+      <input type="text" id="adminProduction" placeholder="예: OO컴퍼니" />
+      <label class="admin-label">주최 (쉼표로 구분)</label>
+      <input type="text" id="adminHost" placeholder="예: OO문화재단" />
+      <label class="admin-label">주관 (쉼표로 구분)</label>
+      <input type="text" id="adminSupervisor" placeholder="예: OO컴퍼니" />
+      <a href="#" class="admin-edit-play-btn hidden" id="openCastScheduleBtn">🗓 회차별 캐스팅 일정 관리</a>
+      <button class="modal-submit-btn" id="adminSubmitBtn">등록하기</button>
+      <button type="button" class="admin-delete-play-btn hidden" id="adminDeletePlayBtn">🗑 이 연극 삭제하기</button>
+      <p class="modal-error" id="adminError"></p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 AfterScene. All rights reserved.</p>
+    <p class="kopis-credit">본 서비스는 공연예술통합전산망(KOPIS)이 제공하는 공연정보를 활용하였습니다.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

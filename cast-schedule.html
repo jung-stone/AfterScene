@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>캐스팅 일정 관리 | AfterScene</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- 상단 헤더 -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">AfterScene</a>
+      <nav class="nav-menu">
+        <a href="admin.html" id="adminAddBtn" class="hidden">+ 연극 등록</a>
+        <a href="mypage.html" id="myPageBtn">마이페이지</a>
+        <a href="#" id="loginBtn">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <a href="#" class="back-link" id="backLink">← 뒤로가기</a>
+
+    <div class="modal-box mypage-box page-box">
+      <h2>회차별 캐스팅 일정</h2>
+
+      <div class="cast-schedule-form">
+        <input type="date" id="scheduleDateInput" />
+        <input type="text" id="scheduleTimeInput" placeholder="시간 (예: 19:00)" />
+        <select id="scheduleActorSelect"></select>
+        <button id="scheduleAddBtn">추가</button>
+      </div>
+
+      <div id="castScheduleList"></div>
+      <p class="modal-error" id="castScheduleError"></p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 AfterScene. All rights reserved.</p>
+    <p class="kopis-credit">본 서비스는 공연예술통합전산망(KOPIS)이 제공하는 공연정보를 활용하였습니다.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/common.js"></script>
+  <script src="js/cast-schedule.js"></script>
+</body>
+</html>

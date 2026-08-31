@@ -317,6 +317,30 @@ a {
   color: #6b7280;
 }
 
+/* ===== 서브페이지 공통 레이아웃 (모달 대체) ===== */
+.page-shell {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: #ff5a5f;
+}
+
+.page-box {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
 /* ===== 공통 모달 ===== */
 .modal-overlay {
   display: none;
