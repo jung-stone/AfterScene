@@ -8,7 +8,114 @@ async function initMyPage() {
   myUserId = user.id;
   document.getElementById('myPageEmail').textContent = user.email;
   loadMyStats(user.id);
+  loadMyFollows(user.id);
   loadMyReviews(user.id);
+}
+
+// ===== 팔로우한 배우 · 공연장 (+ 최신 소식) =====
+function playStatusLabel(play) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!play.start_date && !play.end_date) return '';
+  if (play.start_date && play.start_date > today) return '🔜 공연예정';
+  if (play.end_date && play.end_date < today) return '🔚 공연종료';
+  return '🎭 공연중';
+}
+
+function pickLatestPlay(plays) {
+  if (!plays || plays.length === 0) return null;
+  return [...plays].sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''))[0];
+}
+
+async function loadMyFollows(userId) {
+  const container = document.getElementById('myFollowList');
+  container.innerHTML = `<p class="placeholder-text">불러오는 중...</p>`;
+
+  const { data: follows, error } = await supabaseClient
+    .from('follows')
+    .select('entity_type, entity_id, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    container.innerHTML = `<p class="placeholder-text">팔로우 목록을 불러오지 못했어요.</p>`;
+    return;
+  }
+
+  if (!follows || follows.length === 0) {
+    container.innerHTML = `<p class="placeholder-text">아직 팔로우한 배우·공연장이 없어요. 마음에 드는 배우나 공연장 페이지에서 팔로우해보세요!</p>`;
+    return;
+  }
+
+  const personIds = follows.filter(f => f.entity_type === 'person').map(f => f.entity_id);
+  const venueIds = follows.filter(f => f.entity_type === 'venue').map(f => f.entity_id);
+
+  const [{ data: people }, { data: venues }] = await Promise.all([
+    personIds.length
+      ? supabaseClient.from('people').select('id, name').in('id', personIds)
+      : Promise.resolve({ data: [] }),
+    venueIds.length
+      ? supabaseClient.from('venues').select('id, name').in('id', venueIds)
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const nameByPersonId = {};
+  (people || []).forEach(p => { nameByPersonId[p.id] = p.name; });
+  const nameByVenueId = {};
+  (venues || []).forEach(v => { nameByVenueId[v.id] = v.name; });
+
+  const creditsByPerson = {};
+  if (personIds.length) {
+    const { data: credits } = await supabaseClient
+      .from('play_credits')
+      .select('person_id, plays(id, title, start_date, end_date)')
+      .eq('role', '출연진')
+      .in('person_id', personIds);
+
+    (credits || []).forEach(c => {
+      if (!c.plays) return;
+      if (!creditsByPerson[c.person_id]) creditsByPerson[c.person_id] = [];
+      creditsByPerson[c.person_id].push(c.plays);
+    });
+  }
+
+  const playsByVenue = {};
+  if (venueIds.length) {
+    const { data: venuePlays } = await supabaseClient
+      .from('plays')
+      .select('id, title, start_date, end_date, venue_id')
+      .in('venue_id', venueIds);
+
+    (venuePlays || []).forEach(p => {
+      if (!playsByVenue[p.venue_id]) playsByVenue[p.venue_id] = [];
+      playsByVenue[p.venue_id].push(p);
+    });
+  }
+
+  container.innerHTML = follows.map(f => {
+    const isPerson = f.entity_type === 'person';
+    const name = isPerson ? nameByPersonId[f.entity_id] : nameByVenueId[f.entity_id];
+    if (!name) return '';
+
+    const latest = isPerson ? pickLatestPlay(creditsByPerson[f.entity_id]) : pickLatestPlay(playsByVenue[f.entity_id]);
+    const newsHtml = latest
+      ? `<span class="follow-news">${playStatusLabel(latest)} · ${latest.title}</span>`
+      : `<span class="follow-news follow-news-empty">최근 소식이 없어요</span>`;
+
+    return `
+      <div class="follow-item" data-type="${f.entity_type}" data-id="${f.entity_id}">
+        <span class="follow-type-badge">${isPerson ? '배우' : '공연장'}</span>
+        <span class="follow-name">${name}</span>
+        ${newsHtml}
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.follow-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const page = el.dataset.type === 'person' ? 'person.html' : 'venue.html';
+      location.href = `${page}?id=${encodeURIComponent(el.dataset.id)}`;
+    });
+  });
 }
 
 async function loadMyReviews(userId) {

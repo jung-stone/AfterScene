@@ -182,6 +182,74 @@ async function requireLogin(message) {
   return user;
 }
 
+// ===== 팔로우 (배우/공연장 찜) =====
+async function isFollowing(entityType, entityId) {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabaseClient
+    .from('follows')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+async function toggleFollow(entityType, entityId, btnEl) {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) {
+    alert('로그인 후 이용해주세요.');
+    document.getElementById('authModal').classList.add('active');
+    return;
+  }
+
+  const isFollowingNow = btnEl.classList.contains('following');
+
+  if (isFollowingNow) {
+    const { error } = await supabaseClient
+      .from('follows')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId);
+
+    if (error) {
+      alert('팔로우 취소 중 오류가 발생했어요: ' + error.message);
+      return;
+    }
+
+    btnEl.classList.remove('following');
+    btnEl.textContent = '☆ 팔로우';
+  } else {
+    const { error } = await supabaseClient
+      .from('follows')
+      .insert({ user_id: user.id, entity_type: entityType, entity_id: entityId });
+
+    if (error) {
+      alert('팔로우 중 오류가 발생했어요: ' + error.message);
+      return;
+    }
+
+    btnEl.classList.add('following');
+    btnEl.textContent = '★ 팔로우 중';
+  }
+}
+
+async function setupFollowButton(entityType, entityId) {
+  const btn = document.getElementById('followBtn');
+  if (!btn) return;
+
+  const following = await isFollowing(entityType, entityId);
+  btn.classList.toggle('following', following);
+  btn.textContent = following ? '★ 팔로우 중' : '☆ 팔로우';
+  btn.classList.remove('hidden');
+
+  btn.addEventListener('click', () => toggleFollow(entityType, entityId, btn));
+}
+
 // 뒤로가기 링크: 같은 사이트 안에서 넘어온 경우 브라우저 히스토리로, 아니면 목록으로
 function setupBackLink() {
   const backLink = document.getElementById('backLink');

@@ -28,6 +28,7 @@ async function initVenuePage() {
 
   document.getElementById('venueName').textContent = venue.name;
   document.getElementById('venueBio').textContent = venue.description || '아직 소개가 없어요.';
+  setupFollowButton('venue', venueId);
 
   const { data: plays } = await supabaseClient
     .from('plays')

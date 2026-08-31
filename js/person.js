@@ -28,6 +28,7 @@ async function initPersonPage() {
 
   document.getElementById('personName').textContent = person.name;
   document.getElementById('personBio').textContent = person.bio || '아직 소개가 없어요.';
+  setupFollowButton('person', personId);
 
   const { data: credits } = await supabaseClient
     .from('play_credits')
