@@ -189,6 +189,169 @@ function categorizeAndRenderPlays(plays) {
   renderPlays(sortPlays(ended), 'endedPlays');
 }
 
+// ===== 최근 관극 기록 피드 =====
+const FEED_SIZE = 6;
+
+function toRelativeTime(isoString) {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diffMs / (1000 * 60));
+
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}일 전`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}주 전`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}개월 전`;
+
+  return `${Math.floor(days / 365)}년 전`;
+}
+
+async function loadRecentFeed() {
+  const container = document.getElementById('recentFeedList');
+
+  const { data: reviews, error } = await supabaseClient
+    .from('reviews')
+    .select('id, rating, one_line_review, created_at, user_id, play_id, plays(id, title, poster_url)')
+    .order('created_at', { ascending: false })
+    .limit(FEED_SIZE);
+
+  if (error || !reviews || reviews.length === 0) {
+    container.innerHTML = `<p class="placeholder-text">아직 등록된 관극 기록이 없어요. 첫 기록을 남겨보세요!</p>`;
+    return;
+  }
+
+  const userIds = [...new Set(reviews.map(r => r.user_id))];
+  const { data: profiles } = await supabaseClient
+    .from('profiles')
+    .select('id, nickname')
+    .in('id', userIds);
+  const nicknameMap = {};
+  (profiles || []).forEach(p => { nicknameMap[p.id] = p.nickname; });
+
+  container.innerHTML = reviews.filter(r => r.plays).map(r => {
+    const nickname = nicknameMap[r.user_id] || '익명';
+    const posterUrl = r.plays.poster_url || 'https://placehold.co/300x450/22252d/f5f5f5?text=No+Image';
+
+    return `
+      <div class="feed-card" data-play-id="${r.plays.id}">
+        <img src="${posterUrl}" alt="${r.plays.title}" />
+        <div class="feed-card-body">
+          <div class="feed-card-top">
+            <span class="feed-card-nickname">${nickname}</span>
+            <span class="feed-card-time">${toRelativeTime(r.created_at)}</span>
+          </div>
+          <div class="feed-card-play-title">${r.plays.title}</div>
+          <div class="feed-card-line">
+            <span class="feed-card-rating">⭐ ${r.rating.toFixed(1)}</span>
+            <span>${r.one_line_review}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.feed-card').forEach(card => {
+    card.addEventListener('click', () => {
+      location.href = `review.html?playId=${encodeURIComponent(card.dataset.playId)}`;
+    });
+  });
+}
+
+// ===== 이달의 화제 배우 · 공연장 =====
+const TRENDING_REVIEW_LOOKBACK = 200; // 최근 후기 N건을 기준으로 집계
+const TRENDING_RANK_SIZE = 5;
+
+function renderTrendingList(containerId, rankMap, navBase) {
+  const container = document.getElementById(containerId);
+  const list = Object.values(rankMap)
+    .sort((a, b) => b.count - a.count || b.avg - a.avg)
+    .slice(0, TRENDING_RANK_SIZE);
+
+  if (list.length === 0) {
+    container.innerHTML = `<p class="placeholder-text">아직 데이터가 부족해요.</p>`;
+    return;
+  }
+
+  container.innerHTML = list.map((item, i) => `
+    <div class="taste-rank-item trending-rank-item" data-id="${item.id}">
+      <span class="taste-rank-num">${i + 1}</span>
+      <span class="taste-rank-name">${item.name}</span>
+      <span class="taste-rank-count">⭐ ${item.avg.toFixed(1)} · ${item.count}건</span>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.trending-rank-item').forEach(el => {
+    el.addEventListener('click', () => {
+      location.href = `${navBase}${encodeURIComponent(el.dataset.id)}`;
+    });
+  });
+}
+
+async function loadTrending() {
+  const { data: reviews, error } = await supabaseClient
+    .from('reviews')
+    .select('rating, play_id, created_at')
+    .order('created_at', { ascending: false })
+    .limit(TRENDING_REVIEW_LOOKBACK);
+
+  if (error || !reviews || reviews.length === 0) {
+    renderTrendingList('trendingActors', {}, '');
+    renderTrendingList('trendingVenues', {}, '');
+    return;
+  }
+
+  const playIds = [...new Set(reviews.map(r => r.play_id))];
+
+  const [{ data: plays }, { data: credits }] = await Promise.all([
+    supabaseClient.from('plays').select('id, venue, venue_id').in('id', playIds),
+    supabaseClient.from('play_credits').select('play_id, person_id, people(name)').eq('role', '출연진').in('play_id', playIds)
+  ]);
+
+  const venueByPlay = {};
+  (plays || []).forEach(p => {
+    if (p.venue_id) venueByPlay[p.id] = { id: p.venue_id, name: p.venue };
+  });
+
+  const castByPlay = {};
+  (credits || []).forEach(c => {
+    if (!c.people) return;
+    if (!castByPlay[c.play_id]) castByPlay[c.play_id] = [];
+    castByPlay[c.play_id].push({ id: c.person_id, name: c.people.name });
+  });
+
+  const actorRank = {};
+  const venueRank = {};
+
+  reviews.forEach(r => {
+    const venue = venueByPlay[r.play_id];
+    if (venue) {
+      if (!venueRank[venue.id]) venueRank[venue.id] = { id: venue.id, name: venue.name, count: 0, sum: 0, avg: 0 };
+      venueRank[venue.id].count += 1;
+      venueRank[venue.id].sum += r.rating;
+    }
+
+    (castByPlay[r.play_id] || []).forEach(actor => {
+      if (!actorRank[actor.id]) actorRank[actor.id] = { id: actor.id, name: actor.name, count: 0, sum: 0, avg: 0 };
+      actorRank[actor.id].count += 1;
+      actorRank[actor.id].sum += r.rating;
+    });
+  });
+
+  Object.values(actorRank).forEach(a => { a.avg = a.sum / a.count; });
+  Object.values(venueRank).forEach(v => { v.avg = v.sum / v.count; });
+
+  renderTrendingList('trendingActors', actorRank, 'person.html?id=');
+  renderTrendingList('trendingVenues', venueRank, 'venue.html?id=');
+}
+
 // ===== 캐러셀 화살표 =====
 function setupCarouselArrows() {
   document.querySelectorAll('.carousel-arrow').forEach(btn => {
@@ -204,6 +367,8 @@ function setupCarouselArrows() {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadPlays();
+  loadRecentFeed();
+  loadTrending();
   setupSearch();
   setupPlaySort();
   setupCarouselArrows();

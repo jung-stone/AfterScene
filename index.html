@@ -32,6 +32,13 @@
       <p>당신이 본 연극, 그 감동을 기록해보세요.</p>
     </section>
 
+    <section class="play-section recent-feed-section">
+      <h2 class="section-title">📝 방금 남겨진 관극 기록</h2>
+      <div class="recent-feed-list" id="recentFeedList">
+        <p class="placeholder-text">불러오는 중...</p>
+      </div>
+    </section>
+
     <div class="sort-select-row">
       <select id="playSortSelect">
         <option value="popular" selected>인기순</option>
@@ -47,6 +54,20 @@
           <p class="placeholder-text">불러오는 중...</p>
         </div>
         <button class="carousel-arrow carousel-arrow-right" data-target="ongoingPlays">›</button>
+      </div>
+    </section>
+
+    <section class="play-section trending-section">
+      <h2 class="section-title">🔥 요즘 화제의 배우 · 공연장</h2>
+      <div class="trending-grid">
+        <div class="taste-group">
+          <div class="taste-group-title">배우</div>
+          <div id="trendingActors"><p class="placeholder-text">불러오는 중...</p></div>
+        </div>
+        <div class="taste-group">
+          <div class="taste-group-title">공연장</div>
+          <div id="trendingVenues"><p class="placeholder-text">불러오는 중...</p></div>
+        </div>
       </div>
     </section>
 

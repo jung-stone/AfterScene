@@ -348,6 +348,115 @@ a {
   margin-top: 6px;
 }
 
+/* ===== 최근 관극 기록 피드 ===== */
+.recent-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feed-card {
+  display: flex;
+  gap: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.feed-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.feed-card img {
+  width: 52px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--bg-surface-2);
+}
+
+.feed-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.feed-card-nickname {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.feed-card-time {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.feed-card-play-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-card-rating {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.feed-card-line {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== 이달의 화제 배우 · 공연장 (메인) ===== */
+.trending-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.trending-grid .taste-group-title {
+  font-size: 14px;
+}
+
+.trending-rank-item {
+  cursor: pointer;
+}
+
+.trending-rank-item:hover .taste-rank-name {
+  color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  .trending-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
 /* ===== 푸터 ===== */
 .footer {
   text-align: center;
@@ -1319,6 +1428,15 @@ a {
   .person-play-card img {
     width: 38px;
     height: 57px;
+  }
+
+  .feed-card img {
+    width: 44px;
+    height: 66px;
+  }
+
+  .feed-card-play-title {
+    font-size: 13px;
   }
 
   .credit-role-group {
